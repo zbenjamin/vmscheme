@@ -7,13 +7,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEF_PRIM(name, arity, func) \
+  env_define(global_env, name, make_primitive_procedure(func, arity))
+
 void
 init_primitive_procs()
 {
-  env_define(global_env, "car", make_primitive_procedure(car, 1));
-  env_define(global_env, "cdr", make_primitive_procedure(cdr, 1));
-  env_define(global_env, "plus", make_primitive_procedure(plus, 2));
-  env_define(global_env, "minus", make_primitive_procedure(minus, 2));
+  DEF_PRIM("cons", make_pair, 2);
+  DEF_PRIM("car", car, 1);
+  DEF_PRIM("cdr", cdr, 1);
+  DEF_PRIM("plus", plus, 2);
+  DEF_PRIM("minus", minus, 2);
 }
 
 struct object*
