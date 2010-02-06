@@ -1,6 +1,8 @@
 #include <string.h>
 #include <type.h>
 
+#include <stdlib.h>
+
 #define MAX_TYPES 100
 
 static struct type type_table[MAX_TYPES];
@@ -15,7 +17,7 @@ get_type(char* name)
       return &type_table[i];
     }
   }
-  return 0;
+  return NULL;
 }
 
 struct type*
