@@ -43,6 +43,7 @@ eval_instruction(struct instruction ins, struct stack *stk,
 int
 main(int argc, char* argv[])
 {
+  init_global_env();
   init_builtin_types();
   return 0;
 }

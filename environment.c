@@ -8,6 +8,24 @@
 static int env_find_idx(struct environment *env, char *name);
 
 void
+init_global_env()
+{
+  global_env = make_environment(NULL);
+}
+
+struct environment*
+make_environment(struct environment *parent)
+{
+  struct environment *ret = malloc(sizeof(struct environment));
+  ret->names = 0;
+  ret->values = 0;
+  ret->size = 0;
+  ret->parent = parent;
+
+  return ret;
+}
+
+void
 env_define(struct environment *env, char *name, struct object *val)
 {
   int idx = env_find_idx(env, name);
@@ -37,7 +55,7 @@ env_lookup(struct environment *env, char *name)
 {
   int idx = env_find_idx(env, name);
   if (idx == -1) {
-    return 0;
+    return NULL;
   }
 
   return env->values[idx];
