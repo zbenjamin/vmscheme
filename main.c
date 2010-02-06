@@ -4,6 +4,7 @@
 #include <opcode.h>
 #include <environment.h>
 #include <instruction.h>
+#include <primitive_procedures.h>
 #include <stack.h>
 #include <type.h>
 
@@ -45,5 +46,6 @@ main(int argc, char* argv[])
 {
   init_global_env();
   init_builtin_types();
+  init_primitive_procs();
   return 0;
 }
