@@ -39,4 +39,6 @@ struct object* make_procedure(const struct object *params,
 struct object* make_primitive_procedure(void *func,
                                         unsigned int arity);
 
+void print_obj(struct object *obj);
+
 #endif // VMSCHEME_OBJECT_H

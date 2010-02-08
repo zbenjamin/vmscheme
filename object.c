@@ -1,6 +1,8 @@
 #include <object.h>
+#include <primitive_procedures.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 struct object *NIL;
@@ -78,4 +80,39 @@ make_primitive_procedure(void *func,
   rec->func = func;
   ret->value = rec;
   return ret;
+}
+
+void
+print_obj(struct object *obj)
+{
+  struct object *next;
+
+  switch (obj->type->code) {
+  case NIL_TYPE:
+    printf("'()");
+    break;
+  case INTEGER_TYPE:
+    printf("%d", obj->ival);
+    break;
+  case PAIR_TYPE:
+    next = obj;
+    printf("(");
+    while (1) {
+      print_obj(car(next));
+      if (cdr(next) == NIL) {
+        break;
+      } else if (cdr(next)->type->code != PAIR_TYPE) {
+        printf(" . ");
+        print_obj(cdr(next));
+        break;
+      } else {
+        printf(" ");
+        next = cdr(next);
+      }
+    }
+    printf(")");
+    break;
+  default:
+    printf("\nError: can't print obj type '%s'\n", obj->type->name);
+  }
 }
