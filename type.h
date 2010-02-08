@@ -6,17 +6,20 @@ struct type {
   char* name;
 };
 
-struct type* get_type(char* name);
+struct type* get_type(int typeid);
+struct type* get_type_named(char* name);
 struct type* make_type(char* name);
 
 void init_builtin_types();
 
-extern struct type *nil_type;
-extern struct type *integer_type;
-extern struct type *string_type;
-extern struct type *symbol_type;
-extern struct type *pair_type;
-extern struct type *procedure_type;
-extern struct type *primitive_proc_type;
+enum builtin_types {
+  NIL_TYPE,
+  INTEGER_TYPE,
+  STRING_TYPE,
+  SYMBOL_TYPE,
+  PAIR_TYPE,
+  PROCEDURE_TYPE,
+  PRIMITIVE_PROC_TYPE
+};
 
 #endif // VMSCHEME_TYPE_H

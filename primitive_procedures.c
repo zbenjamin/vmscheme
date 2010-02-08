@@ -23,7 +23,7 @@ init_primitive_procs()
 struct object*
 car(struct object *pair)
 {
-  if (pair->type != pair_type) {
+  if (pair->type->code != PAIR_TYPE) {
     printf("Wrong type for car: %s\n", pair->type->name);
     exit(1);
   }
@@ -33,7 +33,7 @@ car(struct object *pair)
 struct object*
 cdr(struct object *pair)
 {
-  if (pair->type != pair_type) {
+  if (pair->type->code != PAIR_TYPE) {
     printf("Wrong type for cdr: %s\n", pair->type->name);
     exit(1);
   }

@@ -9,7 +9,16 @@ static struct type type_table[MAX_TYPES];
 static unsigned int next_entry = 0;
 
 struct type*
-get_type(char* name)
+get_type(int typeid)
+{
+  if (typeid < next_entry) {
+    return &type_table[typeid];
+  }
+  return NULL;
+}
+
+struct type*
+get_type_named(char* name)
 {
   int i;
   for (i = 0; i < MAX_TYPES; ++i) {
