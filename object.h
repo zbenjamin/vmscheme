@@ -13,6 +13,17 @@ struct object {
   int refcount;  // currently unused
 };
 
+#define INC_REF(x) ++((x)->refcount)
+#define DEC_REF(x)                              \
+  do {                                          \
+    struct object *__obj = (x);                 \
+    --(__obj->refcount);                        \
+    if (__obj->refcount == 0) {                 \
+      obj_dealloc(__obj);                       \
+    }                                           \
+  } while (0)
+
+
 struct proc_rec {
   const struct object *params;
   const struct object *body;
