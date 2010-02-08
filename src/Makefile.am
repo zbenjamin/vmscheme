@@ -8,6 +8,7 @@ vmscheme_SOURCES = builtin_types.c \
 	       	   object.h \
 	       	   opcode.h \
 	       	   parser.c \
+                   parser.h \
 	       	   primitive_procedures.c \
 	       	   primitive_procedures.h \
 	       	   stack.c \

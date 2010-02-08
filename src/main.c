@@ -48,5 +48,21 @@ main(int argc, char* argv[])
   init_builtin_types();
   init_nil();
   init_primitive_procs();
+
+  int ret;
+  char *buf = NULL;
+  size_t nchars;
+  while (1) {
+    printf("> ");
+    ret = getline(&buf, &nchars, stdin);
+    if (ret == -1) {
+      break;
+    }
+    struct object *input = parse(buf);
+    print_obj(input);
+    printf("\n");
+    free(buf);
+    buf = NULL;
+  }
   return 0;
 }
