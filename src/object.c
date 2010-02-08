@@ -94,6 +94,9 @@ print_obj(struct object *obj)
   case INTEGER_TYPE:
     printf("%d", obj->ival);
     break;
+  case SYMBOL_TYPE:
+    printf("%s", obj->sval);
+    break;
   case PAIR_TYPE:
     next = obj;
     printf("(");
