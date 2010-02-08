@@ -14,7 +14,7 @@ parse(char *str)
   const char *end;
   char **p;
   int len = strlen(str);
-  *p = str;
+  p = &str;
   end = str + len;
 
   struct object *ret = NIL;
@@ -25,6 +25,7 @@ parse(char *str)
       ret = make_pair(parse_number(p, end),
                       ret);
     } else if (**p == '(') {
+      ++(*p);
       ret = make_pair(parse_seq(p, end),
                       ret);
     } else if (**p == ')') {
@@ -52,6 +53,7 @@ parse_seq(char **p, const char* end)
       ret = make_pair(parse_number(p, end),
                       ret);
     } else if (**p == '(') {
+      ++(*p);
       ret = make_pair(parse_seq(p, end),
                       ret);
     } else if (**p == ')') {
