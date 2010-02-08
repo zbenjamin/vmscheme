@@ -46,6 +46,7 @@ main(int argc, char* argv[])
 {
   init_global_env();
   init_builtin_types();
+  init_nil();
   init_primitive_procs();
   return 0;
 }

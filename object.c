@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct object *NIL;
+
+void
+init_nil()
+{
+  NIL = malloc(sizeof(struct object));
+  NIL->type = get_type(NIL_TYPE);
+}
+
 struct object*
 make_integer(int x)
 {

@@ -24,6 +24,10 @@ struct primitive_proc_rec {
   void *func;
 };
 
+extern struct object *NIL;
+
+void init_nil();
+
 struct object* make_integer(int x);
 struct object* make_string(const char *str);
 struct object* make_symbol(const char *str);
