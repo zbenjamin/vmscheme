@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include <object.h>
+#include <primitive_procedures.h>
 
 static struct object* parse_seq(char **p, const char* end);
 static struct object* parse_number(char **p, const char* end);
