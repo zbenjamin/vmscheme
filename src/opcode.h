@@ -3,6 +3,7 @@
 
 enum opcode {
   NONE,
+  END,
   PUSH,
   LOOKUP,
   CALL,

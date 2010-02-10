@@ -47,7 +47,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_vmscheme_OBJECTS = builtin_types.$(OBJEXT) environment.$(OBJEXT) \
 	main.$(OBJEXT) object.$(OBJEXT) parser.$(OBJEXT) \
-	primitive_procedures.$(OBJEXT) stack.$(OBJEXT) type.$(OBJEXT)
+	primitive_procedures.$(OBJEXT) stack.$(OBJEXT) type.$(OBJEXT) \
+	compiler.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -147,21 +148,23 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 vmscheme_SOURCES = builtin_types.c \
-	       	   environment.c \
-	       	   environment.h \
-	       	   instruction.h \
-	       	   main.c \
-	       	   object.c \
-	       	   object.h \
-	       	   opcode.h \
-	       	   parser.c \
+                   environment.c \
+                   environment.h \
+                   instruction.h \
+                   main.c \
+                   object.c \
+                   object.h \
+                   opcode.h \
+                   parser.c \
                    parser.h \
-	       	   primitive_procedures.c \
-	       	   primitive_procedures.h \
-	       	   stack.c \
-	       	   stack.h \
-	       	   type.c \
-	       	   type.h
+                   primitive_procedures.c \
+                   primitive_procedures.h \
+                   stack.c \
+                   stack.h \
+                   type.c \
+                   type.h \
+                   compiler.c \
+                   compiler.h
 
 all: all-am
 
@@ -245,6 +248,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/builtin_types.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compiler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@
