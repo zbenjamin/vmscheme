@@ -33,6 +33,7 @@ struct proc_rec {
 struct primitive_proc_rec {
   unsigned int arity;
   void *func;
+  const char *name;
 };
 
 extern struct object *NIL;
@@ -48,7 +49,8 @@ struct object* make_procedure(const struct object *params,
                               const struct object *body,
                               struct environment *env);
 struct object* make_primitive_procedure(void *func,
-                                        unsigned int arity);
+                                        unsigned int arity,
+                                        const char* name);
 
 void print_obj(struct object *obj);
 

@@ -70,7 +70,8 @@ make_procedure(const struct object *params,
 
 struct object*
 make_primitive_procedure(void *func,
-                         unsigned int arity)
+                         unsigned int arity,
+                         const char *name)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(PRIMITIVE_PROC_TYPE);
@@ -78,6 +79,7 @@ make_primitive_procedure(void *func,
     malloc(sizeof(struct primitive_proc_rec));
   rec->arity = arity;
   rec->func = func;
+  rec->name = name;
   ret->value = rec;
   return ret;
 }
@@ -114,6 +116,10 @@ print_obj(struct object *obj)
       }
     }
     printf(")");
+    break;
+  case PRIMITIVE_PROC_TYPE:
+    printf("#<primitive-procedure: %s>",
+           ((struct primitive_proc_rec*) obj->value)->name);
     break;
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);

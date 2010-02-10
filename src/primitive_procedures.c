@@ -7,8 +7,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEF_PRIM(name, func, arity) \
-  env_define(global_env, name, make_primitive_procedure(func, arity))
+#define DEF_PRIM(name, func, arity)                             \
+  env_define(global_env, name,                                  \
+             make_primitive_procedure(func, arity, name))
 
 void
 init_primitive_procs()
