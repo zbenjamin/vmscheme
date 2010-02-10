@@ -2,11 +2,27 @@
 #include <stdlib.h>
 
 #include <opcode.h>
+#include <compiler.h>
 #include <environment.h>
 #include <instruction.h>
+#include <parser.h>
 #include <primitive_procedures.h>
 #include <stack.h>
 #include <type.h>
+
+static void eval_instruction(struct instruction ins,
+                             struct stack *stk,
+                             struct environment *env);
+
+void
+eval(struct instruction *prog, struct stack *stk,
+     struct environment *env)
+{
+  struct instruction *pc;
+  for (pc = prog; pc->op != END; ++pc) {
+    eval_instruction(*pc, stk, env);
+  }
+}
 
 void
 eval_instruction(struct instruction ins, struct stack *stk,
@@ -21,13 +37,21 @@ eval_instruction(struct instruction ins, struct stack *stk,
     exit(1);
     break;
   case PUSH:
+    printf("PUSH instruction\n");
     push_stack(stk, ins.arg);
     break;
   case LOOKUP:
-    push_stack(stk, env_lookup(env, (char*) ins.arg));
+    printf("LOOKUP instruction\n");
+    value = env_lookup(env, (char*) ins.arg);
+    if (! value) {
+      printf("Unbound name: %s\n", ins.arg);
+      exit(1);
+    }
+    push_stack(stk, value);
     break;
   case CALL:
-    num_args = pop_stack(stk);
+    printf("CALL instruction\n");
+    /* num_args = pop_stack(stk); */
     // pull off args
     // call procedure
     break;
@@ -61,7 +85,17 @@ main(int argc, char* argv[])
     struct object *input = parse(buf);
     print_obj(input);
     printf("\n");
+
+    struct instruction *prog = compile(input);
+    struct stack *stk = make_stack(1024);
+    eval(prog, stk, global_env);
+    struct object *value = pop_stack(stk);
+    print_obj(value);
+    printf("\n");
+
     free(buf);
+    free(stk);
+    free(prog);
     buf = NULL;
   }
   return 0;
