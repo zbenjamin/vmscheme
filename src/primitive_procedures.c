@@ -69,25 +69,7 @@ reverse_list(struct object *lst)
 struct object*
 list_length(struct object *lst)
 {
-  if (lst->type->code != PAIR_TYPE) {
-    printf("Wrong type for list_length: %s\n", lst->type->name);
-    exit(1);
-  }
-
-  int count = 0;
-  struct object *next = lst;
-  while (next != NIL) {
-    if (cdr(next)->type->code != PAIR_TYPE
-        && cdr(next) != NIL) {
-      printf("Improper list passed to list_length\n");
-      exit(1);
-    }
-
-    next = cdr(next);
-    ++count;
-  }
-
-  return make_integer(count);
+  return make_integer(list_length_int(lst));
 }
 
 struct object*

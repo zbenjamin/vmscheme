@@ -16,4 +16,6 @@ vmscheme_SOURCES = builtin_types.c \
                    type.c \
                    type.h \
                    compiler.c \
-                   compiler.h
+                   compiler.h \
+                   utils.c \
+                   utils.h
