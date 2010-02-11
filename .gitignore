@@ -5,3 +5,4 @@ config.status
 src/.deps/
 src/Makefile
 stamp-h1
+autom4te.cache
