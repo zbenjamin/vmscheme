@@ -11,8 +11,11 @@ static void eval_instruction(struct instruction ins,
                              struct stack *stk,
                              struct environment *env);
 static void eval_call(struct stack *stk, struct environment *env);
+static void eval_call1(struct stack *stk, struct object *func,
+                       struct object *args);
 static void eval_call2(struct stack *stk, struct object *func,
                        struct object *args);
+
 
 void
 eval(struct instruction *prog, struct stack *stk,
@@ -83,13 +86,33 @@ eval_call(struct stack *stk, struct environment *env)
 
   // only primitive functions for now
   switch (num_args->ival) {
+  case 1:
+    eval_call1(stk, func, args);
+    break;
   case 2:
     eval_call2(stk, func, args);
     break;
   default:
-    printf("only 2 arguments supported right now\n");
+    printf("primitive procedures with %d arguments "
+           "not supported yet\n",
+           num_args->ival);
     exit(1);
   }
+}
+
+void
+eval_call1(struct stack *stk, struct object *func,
+           struct object *args)
+{
+  struct object *arg1 = car(args);
+
+  struct object *result;
+  struct primitive_proc_rec *rec;
+  rec = (struct primitive_proc_rec*) func->value;
+  struct object *(*function)(struct object*);
+  function = (struct object *(*)(struct object*)) rec->func;
+  result = function(arg1);
+  push_stack(stk, result);
 }
 
 void
