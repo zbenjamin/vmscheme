@@ -18,4 +18,6 @@ vmscheme_SOURCES = builtin_types.c \
                    compiler.c \
                    compiler.h \
                    utils.c \
-                   utils.h
+                   utils.h \
+                   eval.c \
+                   eval.h

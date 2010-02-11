@@ -48,7 +48,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_vmscheme_OBJECTS = builtin_types.$(OBJEXT) environment.$(OBJEXT) \
 	main.$(OBJEXT) object.$(OBJEXT) parser.$(OBJEXT) \
 	primitive_procedures.$(OBJEXT) stack.$(OBJEXT) type.$(OBJEXT) \
-	compiler.$(OBJEXT) utils.$(OBJEXT)
+	compiler.$(OBJEXT) utils.$(OBJEXT) eval.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -166,7 +166,9 @@ vmscheme_SOURCES = builtin_types.c \
                    compiler.c \
                    compiler.h \
                    utils.c \
-                   utils.h
+                   utils.h \
+                   eval.c \
+                   eval.h
 
 all: all-am
 
@@ -252,6 +254,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/builtin_types.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compiler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environment.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Po@am__quote@
