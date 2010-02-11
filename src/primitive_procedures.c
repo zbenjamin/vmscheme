@@ -3,6 +3,7 @@
 #include <environment.h>
 #include <object.h>
 #include <type.h>
+#include <utils.h>
 
 #include <stdio.h>
 #include <stdlib.h>

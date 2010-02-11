@@ -4,6 +4,7 @@
 #include <object.h>
 #include <type.h>
 #include <primitive_procedures.h>
+#include <utils.h>
 
 #include <stdlib.h>
 
@@ -45,7 +46,7 @@ compile_to(struct object *exprs, struct instruction **pc)
     case PAIR_TYPE:
       compile_to(obj, pc);
       (*pc)->op = PUSH;
-      (*pc)->arg = list_length(obj);
+      (*pc)->arg = make_integer(list_length_int(obj) - 1);
       ++(*pc);
       (*pc)->op = CALL;
       ++(*pc);

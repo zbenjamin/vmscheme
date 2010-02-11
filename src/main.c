@@ -14,7 +14,8 @@ static void eval_instruction(struct instruction ins,
                              struct stack *stk,
                              struct environment *env);
 static void eval_call(struct stack *stk, struct environment *env);
-static void eval_call2(struct stack *stk, struct object *args);
+static void eval_call2(struct stack *stk, struct object *func,
+                       struct object *args);
 
 
 void
@@ -75,6 +76,9 @@ eval_call(struct stack *stk, struct environment *env)
            "is not an integer\n");
     exit(1);
   }
+
+  struct object *func = pop_stack(stk);
+
   int num = num_args->ival;
   while (num) {
     args = make_pair(pop_stack(stk), args);
@@ -83,8 +87,8 @@ eval_call(struct stack *stk, struct environment *env)
 
   // only primitive functions for now
   switch (num_args->ival) {
-  case 3:
-    eval_call2(stk, args);
+  case 2:
+    eval_call2(stk, func, args);
     break;
   default:
     printf("only 2 arguments supported right now\n");
@@ -93,19 +97,21 @@ eval_call(struct stack *stk, struct environment *env)
 }
 
 void
-eval_call2(struct stack *stk, struct object *args)
+eval_call2(struct stack *stk, struct object *func,
+           struct object *args)
 {
   struct object *arg2 = car(args);
   args = cdr(args);
   struct object *arg1 = car(args);
   args = cdr(args);
-  struct object *func = car(args);
 
   struct object *result;
   struct primitive_proc_rec *rec;
   rec = (struct primitive_proc_rec*) func->value;
-  struct object *(*function)(struct object*, struct object*);
-  function = (struct object *(*)(struct object*, struct object*)) rec->func;
+  struct object *(*function)(struct object*,
+                             struct object*);
+  function = (struct object *(*)(struct object*,
+                                 struct object*)) rec->func;
   result = function(arg1, arg2);
   push_stack(stk, result);
 }
