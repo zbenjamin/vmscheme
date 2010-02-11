@@ -76,6 +76,15 @@ list_length(struct object *lst)
 struct object*
 plus(struct object *n1, struct object *n2)
 {
+  if (n1->type->code != INTEGER_TYPE) {
+    printf("Argument 1 to plus is not an integer\n");
+    exit(1);
+  }
+  if (n2->type->code != INTEGER_TYPE) {
+    printf("Argument 2 to plus is not an integer\n");
+    exit(1);
+  }
+
   struct object *res;
   res = make_integer(n1->ival + n2->ival);
   return res;
@@ -84,6 +93,15 @@ plus(struct object *n1, struct object *n2)
 struct object*
 minus(struct object *n1, struct object *n2)
 {
+  if (n1->type->code != INTEGER_TYPE) {
+    printf("Argument 1 to minus is not an integer\n");
+    exit(1);
+  }
+  if (n2->type->code != INTEGER_TYPE) {
+    printf("Argument 2 to minus is not an integer\n");
+    exit(1);
+  }
+
   struct object *res;
   res = make_integer(n1->ival - n2->ival);
   return res;
