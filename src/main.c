@@ -13,6 +13,9 @@
 static void eval_instruction(struct instruction ins,
                              struct stack *stk,
                              struct environment *env);
+static void eval_call(struct stack *stk, struct environment *env);
+static void eval_call2(struct stack *stk, struct object *args);
+
 
 void
 eval(struct instruction *prog, struct stack *stk,
@@ -28,7 +31,6 @@ void
 eval_instruction(struct instruction ins, struct stack *stk,
                  struct environment *env)
 {
-  int num_args;
   struct object *value;
 
   switch (ins.op) {
@@ -44,16 +46,14 @@ eval_instruction(struct instruction ins, struct stack *stk,
     printf("LOOKUP instruction\n");
     value = env_lookup(env, (char*) ins.arg);
     if (! value) {
-      printf("Unbound name: %s\n", ins.arg);
+      printf("Unbound name: %s\n", (char*) ins.arg);
       exit(1);
     }
     push_stack(stk, value);
     break;
   case CALL:
     printf("CALL instruction\n");
-    /* num_args = pop_stack(stk); */
-    // pull off args
-    // call procedure
+    eval_call(stk, env);
     break;
   case DEFINE:
     value = pop_stack(stk);
@@ -63,6 +63,51 @@ eval_instruction(struct instruction ins, struct stack *stk,
     printf("Error: unknown opcode\n");
     exit(1);
   }
+}
+
+void
+eval_call(struct stack *stk, struct environment *env)
+{
+  struct object *num_args = pop_stack(stk);
+  struct object *args = NIL;
+  if (num_args->type->code != INTEGER_TYPE) {
+    printf("Internal error: number of arguments to call "
+           "is not an integer\n");
+    exit(1);
+  }
+  int num = num_args->ival;
+  while (num) {
+    args = make_pair(pop_stack(stk), args);
+    --num;
+  }
+
+  // only primitive functions for now
+  switch (num_args->ival) {
+  case 3:
+    eval_call2(stk, args);
+    break;
+  default:
+    printf("only 2 arguments supported right now\n");
+    exit(1);
+  }
+}
+
+void
+eval_call2(struct stack *stk, struct object *args)
+{
+  struct object *arg2 = car(args);
+  args = cdr(args);
+  struct object *arg1 = car(args);
+  args = cdr(args);
+  struct object *func = car(args);
+
+  struct object *result;
+  struct primitive_proc_rec *rec;
+  rec = (struct primitive_proc_rec*) func->value;
+  struct object *(*function)(struct object*, struct object*);
+  function = (struct object *(*)(struct object*, struct object*)) rec->func;
+  result = function(arg1, arg2);
+  push_stack(stk, result);
 }
 
 int
