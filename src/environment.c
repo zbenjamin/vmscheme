@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int env_find_idx(struct environment *env, char *name);
+static int env_find_idx(struct environment *env, const char *name);
 
 void
 init_global_env()
@@ -26,7 +26,8 @@ make_environment(struct environment *parent)
 }
 
 void
-env_define(struct environment *env, char *name, struct object *val)
+env_define(struct environment *env, const char *name,
+           struct object *val)
 {
   int idx = env_find_idx(env, name);
   if (idx != -1) {
@@ -34,11 +35,11 @@ env_define(struct environment *env, char *name, struct object *val)
     return;
   }
 
-  char** names;
-  struct object** values;
-  names = malloc(sizeof(char*) * (env->size + 1));
+  const char **names;
+  struct object **values;
+  names = malloc(sizeof(const char*) * (env->size + 1));
   values = malloc(sizeof(struct object*) * (env->size + 1));
-  memcpy(names, env->names, sizeof(char*) * env->size);
+  memcpy(names, env->names, sizeof(const char*) * env->size);
   memcpy(values, env->values, sizeof(struct object*) * env->size);
   names[env->size] = name;
   values[env->size] = val;
@@ -51,7 +52,7 @@ env_define(struct environment *env, char *name, struct object *val)
 }
 
 struct object*
-env_lookup(struct environment *env, char *name)
+env_lookup(struct environment *env, const char *name)
 {
   int idx = env_find_idx(env, name);
   if (idx == -1) {
@@ -62,7 +63,7 @@ env_lookup(struct environment *env, char *name)
 }    
 
 int
-env_find_idx(struct environment *env, char *name)
+env_find_idx(struct environment *env, const char *name)
 {
   int i;
   for (i = 0; i < env->size; ++i) {

@@ -40,7 +40,7 @@ compile_to(struct object *exprs, struct instruction **pc)
       break;
     case SYMBOL_TYPE:
       (*pc)->op = LOOKUP;
-      (*pc)->arg = obj->sval;
+      (*pc)->arg = obj;
       ++(*pc);
       break;
     case PAIR_TYPE:

@@ -2,10 +2,11 @@
 #define VMSCHEME_INSTRUCTION_H
 
 #include <opcode.h>
+#include <object.h>
 
 struct instruction {
   enum opcode op;
-  void *arg;
+  struct object *arg;
 };
 
 #endif // VMSCHEME_INSTRUCTION_H

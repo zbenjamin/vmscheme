@@ -44,9 +44,9 @@ eval_instruction(struct instruction ins, struct stack *stk,
     break;
   case LOOKUP:
     printf("LOOKUP instruction\n");
-    value = env_lookup(env, (char*) ins.arg);
+    value = env_lookup(env, ins.arg->sval);
     if (! value) {
-      printf("Unbound name: %s\n", (char*) ins.arg);
+      printf("Unbound name: %s\n", ins.arg->sval);
       exit(1);
     }
     push_stack(stk, value);
@@ -57,7 +57,7 @@ eval_instruction(struct instruction ins, struct stack *stk,
     break;
   case DEFINE:
     value = pop_stack(stk);
-    env_define(env, (char*) ins.arg, value);
+    env_define(env, ins.arg->sval, value);
     break;
   default:
     printf("Error: unknown opcode\n");
