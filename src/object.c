@@ -46,10 +46,12 @@ make_pair(struct object *car, struct object *cdr)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(PAIR_TYPE);
-  struct object** val = malloc(sizeof(struct object*) * 2);
-  val[0] = car;
-  val[1] = cdr;
-  ret->value = val;
+  ret->pval = malloc(sizeof(struct object*) * 2);
+  ret->pval[0] = car;
+  ret->pval[1] = cdr;
+  ret->refcount = 1;
+  INC_REF(car);
+  INC_REF(cdr);
   return ret;
 }
 
@@ -64,7 +66,8 @@ make_procedure(const struct object *params,
   rec->params = params;
   rec->body = body;
   rec->env = env;
-  ret->value = rec;
+  ret->proc_val = rec;
+  ret->refcount = 1;
   return ret;
 }
 
@@ -80,7 +83,8 @@ make_primitive_procedure(void *func,
   rec->arity = arity;
   rec->func = func;
   rec->name = name;
-  ret->value = rec;
+  ret->pproc_val = rec;
+  ret->refcount = 1;
   return ret;
 }
 
@@ -119,7 +123,7 @@ print_obj(struct object *obj)
     break;
   case PRIMITIVE_PROC_TYPE:
     printf("#<primitive-procedure: %s>",
-           ((struct primitive_proc_rec*) obj->value)->name);
+           obj->pproc_val->name);
     break;
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);

@@ -6,9 +6,11 @@
 struct object {
   struct type *type;
   union {
-    void* value;
     int ival;
-    const char* sval;
+    const char *sval;
+    struct object **pval;
+    struct proc_rec *proc_val;
+    struct primitive_proc_rec *pproc_val;
   };
   int refcount;  // currently unused
 };

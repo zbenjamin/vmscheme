@@ -107,8 +107,7 @@ eval_call1(struct stack *stk, struct object *func,
   struct object *arg1 = car(args);
 
   struct object *result;
-  struct primitive_proc_rec *rec;
-  rec = (struct primitive_proc_rec*) func->value;
+  struct primitive_proc_rec *rec = func->pproc_val;
   struct object *(*function)(struct object*);
   function = (struct object *(*)(struct object*)) rec->func;
   result = function(arg1);
@@ -125,8 +124,7 @@ eval_call2(struct stack *stk, struct object *func,
   args = cdr(args);
 
   struct object *result;
-  struct primitive_proc_rec *rec;
-  rec = (struct primitive_proc_rec*) func->value;
+  struct primitive_proc_rec *rec = func->pproc_val;
   struct object *(*function)(struct object*,
                              struct object*);
   function = (struct object *(*)(struct object*,

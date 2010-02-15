@@ -29,7 +29,7 @@ car(struct object *pair)
     printf("Wrong type for car: %s\n", pair->type->name);
     exit(1);
   }
-  return ((struct object**) pair->value)[0];
+  return pair->pval[0];
 }
 
 struct object*
@@ -39,7 +39,7 @@ cdr(struct object *pair)
     printf("Wrong type for cdr: %s\n", pair->type->name);
     exit(1);
   }
-  return ((struct object**) pair->value)[1];
+  return pair->pval[1];
 }
 
 struct object*
