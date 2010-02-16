@@ -10,7 +10,8 @@ struct stack {
 };
 
 struct stack* make_stack(unsigned int size);
-void dealloc_stack(struct stack* stk);
+void dealloc_stack(struct stack *stk);
+int stack_empty(struct stack *stk);
 void push_stack(struct stack *stk, struct object *obj);
 struct object* pop_stack(struct stack *stk);
 

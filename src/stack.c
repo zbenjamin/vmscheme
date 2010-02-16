@@ -25,6 +25,12 @@ dealloc_stack(struct stack *stk)
   free(stk);
 }
 
+int
+stack_empty(struct stack *stk)
+{
+  return stk->top == 0;
+}
+
 void
 push_stack(struct stack *stk, struct object *obj)
 {

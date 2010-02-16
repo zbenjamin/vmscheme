@@ -35,9 +35,14 @@ main(int argc, char* argv[])
 
     struct instruction *prog = compile(input);
     struct stack *stk = make_stack(1024);
+    struct object *value;
     eval(prog, stk, global_env);
-    struct object *value = pop_stack(stk);
-    assert(stk->top == 0);
+    if (stack_empty(stk)) {
+      value = NIL;
+    } else {
+      value = pop_stack(stk);
+    }
+    assert(stack_empty(stk));
     print_obj(value);
     printf("\n");
     DEC_REF(value);

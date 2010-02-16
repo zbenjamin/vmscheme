@@ -11,6 +11,8 @@
 
 static void compile_to(struct object *exprs,
                        struct instruction **pc);
+static void compile_comb_to(struct object *exprs,
+                            struct instruction **pc);
 
 struct instruction*
 compile(struct object *exprs)
@@ -46,14 +48,33 @@ compile_to(struct object *exprs, struct instruction **pc)
       ++(*pc);
       break;
     case PAIR_TYPE:
-      compile_to(obj, pc);
-      (*pc)->op = PUSH;
-      (*pc)->arg = make_integer(list_length_int(obj) - 1);
-      ++(*pc);
-      (*pc)->op = CALL;
-      ++(*pc);
+      compile_comb_to(obj, pc);
       break;
     }
     next = cdr(next);
   }
+}
+
+void
+compile_comb_to(struct object *lst, struct instruction **pc)
+{
+  struct object *first = car(lst);
+
+  if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "define") == 0) {
+    // a definition
+    compile_to(cdr(cdr(lst)), pc);
+    (*pc)->op = DEFINE;
+    (*pc)->arg = car(cdr(lst));
+    ++(*pc);
+    return;
+  }
+
+  // a regular function invocation
+  compile_to(lst, pc);
+  (*pc)->op = PUSH;
+  (*pc)->arg = make_integer(list_length_int(lst) - 1);
+  ++(*pc);
+  (*pc)->op = CALL;
+  ++(*pc);
 }

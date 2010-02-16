@@ -56,6 +56,7 @@ eval_instruction(struct instruction ins, struct stack *stk,
     eval_call(stk, env);
     break;
   case DEFINE:
+    printf("DEFINE instruction\n");
     value = pop_stack(stk);
     env_define(env, ins.arg->sval, value);
     break;
@@ -76,12 +77,17 @@ eval_call(struct stack *stk, struct environment *env)
     exit(1);
   }
 
-  struct object *func = pop_stack(stk);
-
   int num = num_args->ival;
   while (num) {
     args = make_pair(pop_stack(stk), args);
     --num;
+  }
+
+  struct object *func = pop_stack(stk);
+  if (func->type->code != PRIMITIVE_PROC_TYPE) {
+    printf("Cannot apply object of type %s\n",
+           func->type->name);
+      exit(1);
   }
 
   // only primitive functions for now
@@ -118,9 +124,9 @@ void
 eval_call2(struct stack *stk, struct object *func,
            struct object *args)
 {
-  struct object *arg2 = car(args);
-  args = cdr(args);
   struct object *arg1 = car(args);
+  args = cdr(args);
+  struct object *arg2 = car(args);
   args = cdr(args);
 
   struct object *result;

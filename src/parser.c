@@ -37,10 +37,10 @@ parse(char *str)
                       ret);
     }
   }
-  struct object *rev = reverse_list(ret);
+  struct object *tmp = reverse_list(ret);
   DEC_REF(ret);
-
-  return rev;
+  ret = tmp;
+  return ret;
 }
 
 struct object*
@@ -59,6 +59,9 @@ parse_seq(char **p, const char* end)
                       ret);
     } else if (**p == ')') {
       ++(*p);
+      struct object *tmp = reverse_list(ret);
+      DEC_REF(ret);
+      ret = tmp;
       return ret;
     } else {
       ret = make_pair(parse_symbol(p, end),
