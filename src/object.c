@@ -8,10 +8,57 @@
 struct object *NIL;
 
 void
+_maybe_dealloc_obj(struct object *obj)
+{
+  if (obj->refcount > 0) {
+    --(obj->refcount);
+    if (obj->refcount == 0) {
+      dealloc_obj(obj);
+    }
+  }
+}
+
+void
+dealloc_obj(struct object *obj)
+{
+  struct object *ocar;
+  struct object *ocdr;
+
+  printf("deallocating %s obj %p: ", obj->type->name, obj);
+
+  switch (obj->type->code) {
+  case PAIR_TYPE:
+    ocar = car(obj);
+    ocdr = cdr(obj);
+    printf("%p %p\n", ocar, ocdr);
+    DEC_REF(ocar);
+    DEC_REF(ocdr);
+    break;
+  case INTEGER_TYPE:
+    printf("%d\n", obj->ival);
+    break;
+  case STRING_TYPE:
+    printf("%s\n", obj->sval);
+    break;
+  case SYMBOL_TYPE:
+    printf("%s\n", obj->sval);
+    break;
+  case PRIMITIVE_PROC_TYPE:
+    printf("%s\n", obj->pproc_val->name);
+    break;
+  default:
+    printf("don't know how to deallocate a %s\n", obj->type->name);
+    exit(1);
+  }
+  free(obj);
+}
+
+void
 init_nil()
 {
   NIL = malloc(sizeof(struct object));
   NIL->type = get_type(NIL_TYPE);
+  NIL->refcount = -1;
 }
 
 struct object*
@@ -20,6 +67,7 @@ make_integer(int x)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(INTEGER_TYPE);
   ret->ival = x;
+  ret->refcount = 1;
   return ret;
 }
 
@@ -29,6 +77,7 @@ make_string(const char *str)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(STRING_TYPE);
   ret->sval = str;
+  ret->refcount = 1;
   return ret;
 }
 
@@ -38,6 +87,7 @@ make_symbol(const char *str)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(SYMBOL_TYPE);
   ret->sval = str;
+  ret->refcount = 1;
   return ret;
 }
 

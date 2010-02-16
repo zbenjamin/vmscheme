@@ -9,4 +9,6 @@ struct instruction {
   struct object *arg;
 };
 
+void dealloc_bytecode(struct instruction *stream);
+
 #endif // VMSCHEME_INSTRUCTION_H

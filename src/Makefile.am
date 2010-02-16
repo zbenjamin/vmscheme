@@ -3,6 +3,7 @@ vmscheme_SOURCES = builtin_types.c \
                    environment.c \
                    environment.h \
                    instruction.h \
+                   instruction.c \
                    main.c \
                    object.c \
                    object.h \

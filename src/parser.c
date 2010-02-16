@@ -38,7 +38,7 @@ parse(char *str)
     }
   }
   struct object *rev = reverse_list(ret);
-  // deal with refcounting here
+  DEC_REF(ret);
 
   return rev;
 }

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,12 +37,15 @@ main(int argc, char* argv[])
     struct stack *stk = make_stack(1024);
     eval(prog, stk, global_env);
     struct object *value = pop_stack(stk);
+    assert(stk->top == 0);
     print_obj(value);
     printf("\n");
+    DEC_REF(value);
 
     free(buf);
-    free(stk);
-    free(prog);
+    dealloc_stack(stk);
+    DEC_REF(input);
+    dealloc_bytecode(prog);
     buf = NULL;
   }
   return 0;

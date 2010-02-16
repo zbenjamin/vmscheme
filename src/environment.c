@@ -29,8 +29,10 @@ void
 env_define(struct environment *env, const char *name,
            struct object *val)
 {
+  INC_REF(val);
   int idx = env_find_idx(env, name);
   if (idx != -1) {
+    DEC_REF(env->values[idx]);
     env->values[idx] = val;
     return;
   }

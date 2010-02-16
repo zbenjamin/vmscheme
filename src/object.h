@@ -12,19 +12,8 @@ struct object {
     struct proc_rec *proc_val;
     struct primitive_proc_rec *pproc_val;
   };
-  int refcount;  // currently unused
+  int refcount;
 };
-
-#define INC_REF(x) ++((x)->refcount)
-#define DEC_REF(x)                              \
-  do {                                          \
-    struct object *__obj = (x);                 \
-    --(__obj->refcount);                        \
-    if (__obj->refcount == 0) {                 \
-      obj_dealloc(__obj);                       \
-    }                                           \
-  } while (0)
-
 
 struct proc_rec {
   const struct object *params;
@@ -37,6 +26,19 @@ struct primitive_proc_rec {
   void *func;
   const char *name;
 };
+
+#define INC_REF(x)                                  \
+  do {                                              \
+    struct object *__obj = (x);                     \
+    if (__obj->refcount >= 0) {                     \
+      ++(__obj->refcount);                          \
+    }                                               \
+  } while (0)
+
+#define DEC_REF(x) _maybe_dealloc_obj(x)
+
+void _maybe_dealloc_obj(struct object *obj);
+void dealloc_obj(struct object *obj);
 
 extern struct object *NIL;
 

@@ -7,6 +7,7 @@
 #include <utils.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 static void compile_to(struct object *exprs,
                        struct instruction **pc);
@@ -16,6 +17,7 @@ compile(struct object *exprs)
 {
   struct instruction *prog;
   prog = malloc(sizeof(struct instruction) * 1024);
+  memset(prog, 0, sizeof(struct instruction) * 1024);
   struct instruction *pc = prog;
 
   compile_to(exprs, &pc);
