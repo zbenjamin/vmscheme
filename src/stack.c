@@ -15,6 +15,17 @@ make_stack(unsigned int size)
 }
 
 void
+dealloc_stack(struct stack *stk)
+{
+  while (stk->top > 0) {
+    struct object *obj = pop_stack(stk);
+    DEC_REF(obj);
+  }
+  free(stk->elems);
+  free(stk);
+}
+
+void
 push_stack(struct stack *stk, struct object *obj)
 {
   stk->elems[stk->top++] = obj;
