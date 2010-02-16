@@ -67,6 +67,9 @@ compile_comb_to(struct object *lst, struct instruction **pc)
     (*pc)->op = DEFINE;
     (*pc)->arg = car(cdr(lst));
     ++(*pc);
+    (*pc)->op = PUSH;
+    (*pc)->arg = NIL;
+    ++(*pc);
     return;
   }
 

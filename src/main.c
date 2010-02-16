@@ -37,11 +37,7 @@ main(int argc, char* argv[])
     struct stack *stk = make_stack(1024);
     struct object *value;
     eval(prog, stk, global_env);
-    if (stack_empty(stk)) {
-      value = NIL;
-    } else {
-      value = pop_stack(stk);
-    }
+    value = pop_stack(stk);
     assert(stack_empty(stk));
     print_obj(value);
     printf("\n");
