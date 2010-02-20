@@ -56,12 +56,15 @@ env_define(struct environment *env, const char *name,
 struct object*
 env_lookup(struct environment *env, const char *name)
 {
-  int idx = env_find_idx(env, name);
-  if (idx == -1) {
-    return NULL;
+  while (env != NULL) {
+    int idx = env_find_idx(env, name);
+    if (idx != -1) {
+      return env->values[idx];
+    }
+    env = env->parent;
   }
 
-  return env->values[idx];
+  return NULL;
 }    
 
 int
