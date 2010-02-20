@@ -1,6 +1,7 @@
 #include <environment.h>
 
 #include <object.h>
+#include <primitive_procedures.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -79,3 +80,15 @@ env_find_idx(struct environment *env, const char *name)
 
   return -1;
 }
+
+void
+env_bind_names(struct environment *env, const struct object *names,
+               const struct object *values)
+{
+  while (names != NIL) {
+    env_define(env, car(names)->sval, car(values));
+    names = cdr(names);
+    values = cdr(values);
+  }
+}
+

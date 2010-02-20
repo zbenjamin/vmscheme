@@ -10,4 +10,5 @@ init_builtin_types()
   make_type("pair");
   make_type("procedure");
   make_type("primitive-procedure");
+  make_type("code");
 }

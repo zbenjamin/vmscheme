@@ -43,6 +43,12 @@ dealloc_obj(struct object *obj)
   case SYMBOL_TYPE:
     printf("%s\n", obj->sval);
     break;
+  case PROCEDURE_TYPE:
+    printf("%p %p %p\n", obj->proc_val->params, obj->proc_val->code,
+           obj->proc_val->env);
+    DEC_REF(obj->proc_val->params);
+    DEC_REF(obj->proc_val->code);
+    break;
   case PRIMITIVE_PROC_TYPE:
     printf("%s\n", obj->pproc_val->name);
     break;
@@ -106,18 +112,20 @@ make_pair(struct object *car, struct object *cdr)
 }
 
 struct object*
-make_procedure(const struct object *params,
-               const struct object *body,
+make_procedure(struct object *params,
+               struct object *code,
                struct environment *env)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(PROCEDURE_TYPE);
   struct proc_rec *rec = malloc(sizeof(struct proc_rec));
   rec->params = params;
-  rec->body = body;
+  rec->code = code;
   rec->env = env;
   ret->proc_val = rec;
   ret->refcount = 1;
+  INC_REF(params);
+  INC_REF(code);
   return ret;
 }
 
@@ -134,6 +142,16 @@ make_primitive_procedure(void *func,
   rec->func = func;
   rec->name = name;
   ret->pproc_val = rec;
+  ret->refcount = 1;
+  return ret;
+}
+
+struct object*
+make_code(struct instruction *code)
+{
+  struct object *ret = malloc(sizeof(struct object));
+  ret->type = get_type(CODE_TYPE);
+  ret->cval = code;
   ret->refcount = 1;
   return ret;
 }
@@ -174,6 +192,9 @@ print_obj(struct object *obj)
   case PRIMITIVE_PROC_TYPE:
     printf("#<primitive-procedure: %s>",
            obj->pproc_val->name);
+    break;
+  case PROCEDURE_TYPE:
+    printf("#<procedure>");
     break;
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);

@@ -10,6 +10,8 @@
 static void eval_instruction(struct instruction ins,
                              struct stack *stk,
                              struct environment *env);
+static void eval_compound_call(struct stack *stk, struct object *func,
+                               struct object *args);
 static void eval_call(struct stack *stk, struct environment *env);
 static void eval_call1(struct stack *stk, struct object *func,
                        struct object *args);
@@ -60,6 +62,13 @@ eval_instruction(struct instruction ins, struct stack *stk,
     value = pop_stack(stk);
     env_define(env, ins.arg->sval, value);
     break;
+  case LAMBDA:
+    printf("LAMBDA instruction\n");
+    struct object *templ = ins.arg;
+    push_stack(stk, make_procedure(templ->proc_val->params,
+                                   templ->proc_val->code,
+                                   env));
+    break;
   default:
     printf("Error: unknown opcode\n");
     exit(1);
@@ -84,13 +93,31 @@ eval_call(struct stack *stk, struct environment *env)
   }
 
   struct object *func = pop_stack(stk);
-  if (func->type->code != PRIMITIVE_PROC_TYPE) {
+  if (func->type->code != PRIMITIVE_PROC_TYPE
+      && func->type->code != PROCEDURE_TYPE) {
     printf("Cannot apply object of type %s\n",
            func->type->name);
+    exit(1);
+  }
+
+  unsigned int num_params =
+    (func->type->code == PROCEDURE_TYPE
+     ? list_length_int(func->proc_val->params)
+     : func->pproc_val->arity);
+
+  if (num_args->ival != num_params) {
+      printf("Incorrect number of arguments to ");
+      print_obj(func);
+      printf("\n");
       exit(1);
   }
 
-  // only primitive functions for now
+  if (func->type->code == PROCEDURE_TYPE) {
+    eval_compound_call(stk, func, args);
+    return;
+  }
+
+  // primitive function dispatch
   switch (num_args->ival) {
   case 1:
     eval_call1(stk, func, args);
@@ -104,6 +131,14 @@ eval_call(struct stack *stk, struct environment *env)
            num_args->ival);
     exit(1);
   }
+}
+
+void
+eval_compound_call(struct stack *stk, struct object *func,
+                   struct object *args) {
+  struct environment *new_env = make_environment(func->proc_val->env);
+  env_bind_names(new_env, func->proc_val->params, args);
+  eval(func->proc_val->code->cval, stk, new_env);
 }
 
 void

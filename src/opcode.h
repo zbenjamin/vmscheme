@@ -7,7 +7,8 @@ enum opcode {
   PUSH,
   LOOKUP,
   CALL,
-  DEFINE
+  DEFINE,
+  LAMBDA
 };
 
 #endif // VMSCHEME_OPCODE_H

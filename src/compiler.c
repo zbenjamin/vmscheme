@@ -72,6 +72,18 @@ compile_comb_to(struct object *lst, struct instruction **pc)
     ++(*pc);
     return;
   }
+  if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "lambda") == 0) {
+    // a lambda expression
+    struct object *template;
+    template = make_procedure(car(cdr(lst)),
+                              make_code(compile(cdr(cdr(lst)))),
+                              0);
+    (*pc)->op = LAMBDA;
+    (*pc)->arg = template;
+    ++(*pc);
+    return;
+  }
 
   // a regular function invocation
   compile_to(lst, pc);

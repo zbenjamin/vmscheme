@@ -2,6 +2,7 @@
 #define VMSCHEME_OBJECT_H
 
 #include <type.h>
+#include <instruction.h>
 
 struct object {
   struct type *type;
@@ -11,13 +12,14 @@ struct object {
     struct object **pval;
     struct proc_rec *proc_val;
     struct primitive_proc_rec *pproc_val;
+    struct instruction *cval;
   };
   int refcount;
 };
 
 struct proc_rec {
-  const struct object *params;
-  const struct object *body;
+  struct object *params;
+  struct object *code;
   struct environment *env;
 };
 
@@ -49,12 +51,13 @@ struct object* make_string(const char *str);
 struct object* make_symbol(const char *str);
 struct object* make_pair(struct object *car,
                          struct object *cdr);
-struct object* make_procedure(const struct object *params,
-                              const struct object *body,
+struct object* make_procedure(struct object *params,
+                              struct object *code,
                               struct environment *env);
 struct object* make_primitive_procedure(void *func,
                                         unsigned int arity,
                                         const char* name);
+struct object* make_code(struct instruction *code);
 
 void print_obj(struct object *obj);
 
