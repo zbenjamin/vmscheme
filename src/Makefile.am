@@ -1,3 +1,4 @@
+CFLAGS := -g -O0 -Wall -Werror
 bin_PROGRAMS = vmscheme
 vmscheme_SOURCES = builtin_types.c \
                    environment.c \
