@@ -6,6 +6,6 @@
 #include <environment.h>
 
 void eval(struct instruction *prog, struct stack *stk,
-          struct environment *env);
+          struct object *env);
 
 #endif // VMSCHEME_EVAL_H

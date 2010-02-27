@@ -7,6 +7,7 @@ enum opcode {
   PUSH,
   LOOKUP,
   CALL,
+  RET,
   DEFINE,
   LAMBDA
 };

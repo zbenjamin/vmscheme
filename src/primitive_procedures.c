@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 #define DEF_PRIM(name, func, arity)                             \
-  env_define(global_env, name,                                  \
+  env_define(global_env, name,                            \
              make_primitive_procedure(func, arity, name))
 
 void

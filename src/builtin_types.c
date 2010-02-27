@@ -11,4 +11,5 @@ init_builtin_types()
   make_type("procedure");
   make_type("primitive-procedure");
   make_type("code");
+  make_type("environment");
 }

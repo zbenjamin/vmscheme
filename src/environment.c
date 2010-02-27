@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int env_find_idx(struct environment *env, const char *name);
+static int env_find_idx(struct object *env, const char *name);
+
+struct object *global_env;
 
 void
 init_global_env()
@@ -14,66 +16,56 @@ init_global_env()
   global_env = make_environment(NULL);
 }
 
-struct environment*
-make_environment(struct environment *parent)
-{
-  struct environment *ret = malloc(sizeof(struct environment));
-  ret->names = 0;
-  ret->values = 0;
-  ret->size = 0;
-  ret->parent = parent;
-
-  return ret;
-}
-
 void
-env_define(struct environment *env, const char *name,
+env_define(struct object *env, const char *name,
            struct object *val)
 {
   INC_REF(val);
   int idx = env_find_idx(env, name);
   if (idx != -1) {
-    DEC_REF(env->values[idx]);
-    env->values[idx] = val;
+    DEC_REF(env->eval->values[idx]);
+    env->eval->values[idx] = val;
     return;
   }
 
   const char **names;
   struct object **values;
-  names = malloc(sizeof(const char*) * (env->size + 1));
-  values = malloc(sizeof(struct object*) * (env->size + 1));
-  memcpy(names, env->names, sizeof(const char*) * env->size);
-  memcpy(values, env->values, sizeof(struct object*) * env->size);
-  names[env->size] = name;
-  values[env->size] = val;
-  free(env->names);
-  free(env->values);
+  names = malloc(sizeof(const char*) * (env->eval->size + 1));
+  values = malloc(sizeof(struct object*) * (env->eval->size + 1));
+  memcpy(names, env->eval->names,
+         sizeof(const char*) * env->eval->size);
+  memcpy(values, env->eval->values,
+         sizeof(struct object*) * env->eval->size);
+  names[env->eval->size] = name;
+  values[env->eval->size] = val;
+  free(env->eval->names);
+  free(env->eval->values);
 
-  env->names = names;
-  env->values = values;
-  env->size++;
+  env->eval->names = names;
+  env->eval->values = values;
+  env->eval->size++;
 }
 
 struct object*
-env_lookup(struct environment *env, const char *name)
+env_lookup(struct object *env, const char *name)
 {
   while (env != NULL) {
     int idx = env_find_idx(env, name);
     if (idx != -1) {
-      return env->values[idx];
+      return env->eval->values[idx];
     }
-    env = env->parent;
+    env = env->eval->parent;
   }
 
   return NULL;
 }    
 
 int
-env_find_idx(struct environment *env, const char *name)
+env_find_idx(struct object *env, const char *name)
 {
   int i;
-  for (i = 0; i < env->size; ++i) {
-    if (strcmp(env->names[i], name) == 0) {
+  for (i = 0; i < env->eval->size; ++i) {
+    if (strcmp(env->eval->names[i], name) == 0) {
       return i;
     }
   }
@@ -82,7 +74,7 @@ env_find_idx(struct environment *env, const char *name)
 }
 
 void
-env_bind_names(struct environment *env, const struct object *names,
+env_bind_names(struct object *env, const struct object *names,
                const struct object *values)
 {
   while (names != NIL) {

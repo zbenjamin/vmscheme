@@ -35,6 +35,11 @@ main(int argc, char* argv[])
 
     struct instruction *prog = compile(input);
     struct stack *stk = make_stack(1024);
+    // push magic "end of instructions" return address
+    struct object *end_marker = make_code(NULL);
+    end_marker->refcount = -1;
+    push_stack(stk, end_marker);
+    push_stack(stk, global_env);
     struct object *value;
     eval(prog, stk, global_env);
     value = pop_stack(stk);

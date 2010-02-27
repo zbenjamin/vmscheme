@@ -13,6 +13,7 @@ struct object {
     struct proc_rec *proc_val;
     struct primitive_proc_rec *pproc_val;
     struct instruction *cval;
+    struct environment *eval;
   };
   int refcount;
 };
@@ -20,7 +21,7 @@ struct object {
 struct proc_rec {
   struct object *params;
   struct object *code;
-  struct environment *env;
+  struct object *env;
 };
 
 struct primitive_proc_rec {
@@ -53,11 +54,12 @@ struct object* make_pair(struct object *car,
                          struct object *cdr);
 struct object* make_procedure(struct object *params,
                               struct object *code,
-                              struct environment *env);
+                              struct object *env);
 struct object* make_primitive_procedure(void *func,
                                         unsigned int arity,
                                         const char* name);
 struct object* make_code(struct instruction *code);
+struct object* make_environment(struct object *parent);
 
 void print_obj(struct object *obj);
 

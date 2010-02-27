@@ -1,4 +1,5 @@
 #include <object.h>
+#include <environment.h>
 #include <primitive_procedures.h>
 
 #include <stdlib.h>
@@ -114,7 +115,7 @@ make_pair(struct object *car, struct object *cdr)
 struct object*
 make_procedure(struct object *params,
                struct object *code,
-               struct environment *env)
+               struct object *env)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(PROCEDURE_TYPE);
@@ -152,6 +153,21 @@ make_code(struct instruction *code)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(CODE_TYPE);
   ret->cval = code;
+  ret->refcount = 1;
+  return ret;
+}
+
+struct object*
+make_environment(struct object *parent)
+{
+  struct object *ret = malloc(sizeof(struct object));
+  ret->type = get_type(ENVIRONMENT_TYPE);
+  struct environment *env = malloc(sizeof(struct environment));
+  env->names = 0;
+  env->values = 0;
+  env->size = 0;
+  env->parent = parent;
+  ret->eval = env;
   ret->refcount = 1;
   return ret;
 }

@@ -23,6 +23,8 @@ compile(struct object *exprs)
   struct instruction *pc = prog;
 
   compile_to(exprs, &pc);
+  pc->op = RET;
+  ++pc;
   pc->op = END;
   return prog;
 }
@@ -78,7 +80,7 @@ compile_comb_to(struct object *lst, struct instruction **pc)
     struct object *template;
     template = make_procedure(car(cdr(lst)),
                               make_code(compile(cdr(cdr(lst)))),
-                              0);
+                              NULL);
     (*pc)->op = LAMBDA;
     (*pc)->arg = template;
     ++(*pc);
@@ -86,9 +88,10 @@ compile_comb_to(struct object *lst, struct instruction **pc)
   }
 
   // a regular function invocation
+  int nargs = list_length_int(lst) - 1;
   compile_to(lst, pc);
   (*pc)->op = PUSH;
-  (*pc)->arg = make_integer(list_length_int(lst) - 1);
+  (*pc)->arg = make_integer(nargs);
   ++(*pc);
   (*pc)->op = CALL;
   ++(*pc);

@@ -20,7 +20,8 @@ enum builtin_types {
   PAIR_TYPE,
   PROCEDURE_TYPE,
   PRIMITIVE_PROC_TYPE,
-  CODE_TYPE
+  CODE_TYPE,
+  ENVIRONMENT_TYPE
 };
 
 #endif // VMSCHEME_TYPE_H

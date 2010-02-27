@@ -17,10 +17,7 @@ make_stack(unsigned int size)
 void
 dealloc_stack(struct stack *stk)
 {
-  while (stk->top > 0) {
-    struct object *obj = pop_stack(stk);
-    DEC_REF(obj);
-  }
+  assert(stack_empty(stk));
   free(stk->elems);
   free(stk);
 }
@@ -48,6 +45,6 @@ push_stack(struct stack *stk, struct object *obj)
 
 struct object*
 pop_stack(struct stack *stk) {
-  assert(stk->top >= 0);
+  assert(stk->top > 0);
   return stk->elems[--stk->top];
 }
