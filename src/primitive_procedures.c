@@ -45,23 +45,20 @@ cdr(const struct object *pair)
 struct object*
 reverse_list(struct object *lst)
 {
-  if (lst->type->code != PAIR_TYPE) {
+  if (lst->type->code != PAIR_TYPE && lst->type->code != NIL_TYPE) {
     printf("Wrong type for reverse_list: %s\n", lst->type->name);
     exit(1);
   }
 
   struct object *ret = NIL;
   struct object *next = lst;
-  while (1) {
-    ret = make_pair(car(next), ret);
-    if (cdr(next) == NIL) {
-      break;
-    } else if (cdr(next)->type->code != PAIR_TYPE) {
+  while (next != NIL) {
+    if (next->type->code != PAIR_TYPE) {
       printf("Improper list passed to reverse_list\n");
       exit(1);
-    } else {
-      next = cdr(next);
     }
+    ret = make_pair(car(next), ret);
+    next = cdr(next);
   }
 
   return ret;

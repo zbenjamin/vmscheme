@@ -87,6 +87,30 @@ compile_comb_to(struct object *lst, struct instruction **pc)
     ++(*pc);
     return;
   }
+  if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "if") == 0) {
+    // an if statement.  turn the two clauses into lambdas
+    struct object *conseq;
+    struct object *conseq_code = make_pair(car(cdr(cdr(lst))), NIL);
+    conseq = make_procedure(NIL,
+                            make_code(compile(conseq_code)),
+                            NULL);
+    struct object *alt;
+    struct object *alt_code = make_pair(car(cdr(cdr(cdr(lst)))), NIL);
+    alt = make_procedure(NIL,
+                         make_code(compile(alt_code)),
+                         NULL);
+    (*pc)->op = LAMBDA;
+    (*pc)->arg = conseq;
+    ++(*pc);
+    (*pc)->op = LAMBDA;
+    (*pc)->arg = alt;
+    ++(*pc);
+    compile_to(make_pair(car(cdr(lst)), NIL), pc);
+    (*pc)->op = IF;
+    ++(*pc);
+    return;
+  }
 
   // a regular function invocation
   int nargs = list_length_int(lst) - 1;

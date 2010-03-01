@@ -17,6 +17,8 @@ static void eval_call1(struct stack *stk, struct object *func,
                        struct object *args);
 static void eval_call2(struct stack *stk, struct object *func,
                        struct object *args);
+static void eval_if(struct instruction **pc, struct stack *stk,
+                    struct object **env);
 
 
 void
@@ -86,6 +88,10 @@ eval_instruction(struct instruction **pc, struct stack *stk,
                                    templ->proc_val->code,
                                    *env));
     (*pc)++;
+    break;
+  case IF:
+    printf("IF instruction\n");
+    eval_if(pc, stk, env);
     break;
   default:
     printf("Error: unknown opcode: %d\n", (*pc)->op);
@@ -198,4 +204,24 @@ eval_call2(struct stack *stk, struct object *func,
                                  struct object*)) rec->func;
   result = function(arg1, arg2);
   push_stack(stk, result);
+}
+
+void
+eval_if(struct instruction **pc, struct stack *stk,
+        struct object **env)
+{
+  struct object *testval = pop_stack(stk);
+  struct object *alt = pop_stack(stk);
+  struct object *conseq = pop_stack(stk);
+
+  struct object *action;
+  if (testval == FALSE) {
+    action = alt;
+  } else {
+    action = conseq;
+  }
+
+  push_stack(stk, action);
+  push_stack(stk, make_integer(0));
+  eval_call(pc, stk, env);
 }

@@ -9,7 +9,8 @@ enum opcode {
   CALL,
   RET,
   DEFINE,
-  LAMBDA
+  LAMBDA,
+  IF
 };
 
 #endif // VMSCHEME_OPCODE_H

@@ -10,7 +10,7 @@
 int
 list_length_int(struct object *lst)
 {
-  if (lst->type->code != PAIR_TYPE) {
+  if (lst->type->code != PAIR_TYPE && lst->type->code != NIL_TYPE) {
     printf("Wrong type for list_length: %s\n", lst->type->name);
     exit(1);
   }
