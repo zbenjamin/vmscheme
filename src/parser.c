@@ -9,6 +9,7 @@
 static struct object* parse_seq(char **p, const char* end);
 static struct object* parse_number(char **p, const char* end);
 static struct object* parse_symbol(char **p, const char* end);
+static struct object* parse_boolean(char **p, const char* end);
 
 struct object*
 parse(char *str)
@@ -25,6 +26,9 @@ parse(char *str)
       ++(*p);
     } else if (isdigit(**p)) {
       ret = make_pair(parse_number(p, end),
+                      ret);
+    } else if (**p == '#') {
+      ret = make_pair(parse_boolean(p, end),
                       ret);
     } else if (**p == '(') {
       ++(*p);
@@ -54,6 +58,9 @@ parse_seq(char **p, const char* end)
     } else if (isdigit(**p)) {
       ret = make_pair(parse_number(p, end),
                       ret);
+    } else if (**p == '#') {
+      ret = make_pair(parse_boolean(p, end),
+                      ret);
     } else if (**p == '(') {
       ++(*p);
       ret = make_pair(parse_seq(p, end),
@@ -74,15 +81,39 @@ parse_seq(char **p, const char* end)
 }
 
 struct object*
-parse_number(char **p, const char* end)
+parse_number(char **p, const char *end)
 {
   long num = strtol(*p, p, 10);
   struct object *ret = make_integer(num);
   return ret;
-}  
+}
 
 struct object*
-parse_symbol(char **p, const char* end)
+parse_boolean(char **p, const char *end)
+{
+  ++(*p);
+  char c = **p;
+  ++(*p);
+  if (*p != end
+      && ! isspace(**p)
+      && **p != '('
+      && **p != ')') {
+    printf("Parse error: bad #-token\n");
+    exit(1);
+  }
+
+  if (c == 't' || c == 'T') {
+    return TRUE;
+  } else if (c == 'f'|| c == 'F') {
+    return FALSE;
+  }
+
+  printf("Parse error: bad #-token\n");
+  exit(1);
+}
+
+struct object*
+parse_symbol(char **p, const char *end)
 {
   char* start = *p;
   while (*p != end

@@ -17,7 +17,7 @@ main(int argc, char* argv[])
 {
   init_global_env();
   init_builtin_types();
-  init_nil();
+  init_singleton_objects();
   init_primitive_procs();
 
   int ret;

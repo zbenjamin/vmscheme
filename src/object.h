@@ -44,8 +44,10 @@ void _maybe_dealloc_obj(struct object *obj);
 void dealloc_obj(struct object *obj);
 
 extern struct object *NIL;
+extern struct object *TRUE;
+extern struct object *FALSE;
 
-void init_nil();
+void init_singleton_objects();
 
 struct object* make_integer(int x);
 struct object* make_string(const char *str);

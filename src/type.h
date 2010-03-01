@@ -14,6 +14,7 @@ void init_builtin_types();
 
 enum builtin_types {
   NIL_TYPE,
+  BOOLEAN_TYPE,
   INTEGER_TYPE,
   STRING_TYPE,
   SYMBOL_TYPE,

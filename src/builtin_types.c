@@ -4,6 +4,7 @@ void
 init_builtin_types()
 {
   make_type("nil");
+  make_type("boolean");
   make_type("integer");
   make_type("string");
   make_type("symbol");

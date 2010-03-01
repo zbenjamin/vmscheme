@@ -7,6 +7,8 @@
 #include <string.h>
 
 struct object *NIL;
+struct object *TRUE;
+struct object *FALSE;
 
 void
 _maybe_dealloc_obj(struct object *obj)
@@ -61,11 +63,17 @@ dealloc_obj(struct object *obj)
 }
 
 void
-init_nil()
+init_singleton_objects()
 {
   NIL = malloc(sizeof(struct object));
   NIL->type = get_type(NIL_TYPE);
   NIL->refcount = -1;
+  TRUE = malloc(sizeof(struct object));
+  TRUE->type = get_type(BOOLEAN_TYPE);
+  TRUE->refcount = -1;
+  FALSE = malloc(sizeof(struct object));
+  FALSE->type = get_type(BOOLEAN_TYPE);
+  FALSE->refcount = -1;
 }
 
 struct object*
@@ -180,6 +188,16 @@ print_obj(struct object *obj)
   switch (obj->type->code) {
   case NIL_TYPE:
     printf("'()");
+    break;
+  case BOOLEAN_TYPE:
+    if (obj == TRUE) {
+      printf("#t");
+    } else if (obj == FALSE) {
+      printf("#f");
+    } else {
+      printf("Internal error: invalid boolean\n");
+      exit(1);
+    }
     break;
   case INTEGER_TYPE:
     printf("%d", obj->ival);

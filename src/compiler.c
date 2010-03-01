@@ -38,6 +38,7 @@ compile_to(struct object *exprs, struct instruction **pc)
     struct object *obj = car(next);
     switch (obj->type->code) {
     case NIL_TYPE:
+    case BOOLEAN_TYPE:
     case INTEGER_TYPE:
     case STRING_TYPE:
       (*pc)->op = PUSH;
