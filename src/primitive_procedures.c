@@ -18,8 +18,13 @@ init_primitive_procs()
   DEF_PRIM("cons", make_pair, 2);
   DEF_PRIM("car", car, 1);
   DEF_PRIM("cdr", cdr, 1);
-  DEF_PRIM("plus", plus, 2);
-  DEF_PRIM("minus", minus, 2);
+  DEF_PRIM("+", plus, 2);
+  DEF_PRIM("-", minus, 2);
+  DEF_PRIM("*", mult, 2);
+  DEF_PRIM("/", idiv, 2);
+  DEF_PRIM("=", iequal, 2);
+  DEF_PRIM("eq?", eq_p, 2);
+  DEF_PRIM("object-type", object_type, 1);
 }
 
 struct object*
@@ -74,11 +79,11 @@ struct object*
 plus(struct object *n1, struct object *n2)
 {
   if (n1->type->code != INTEGER_TYPE) {
-    printf("Argument 1 to plus is not an integer\n");
+    printf("Argument 1 to + is not an integer\n");
     exit(1);
   }
   if (n2->type->code != INTEGER_TYPE) {
-    printf("Argument 2 to plus is not an integer\n");
+    printf("Argument 2 to + is not an integer\n");
     exit(1);
   }
 
@@ -91,15 +96,82 @@ struct object*
 minus(struct object *n1, struct object *n2)
 {
   if (n1->type->code != INTEGER_TYPE) {
-    printf("Argument 1 to minus is not an integer\n");
+    printf("Argument 1 to - is not an integer\n");
     exit(1);
   }
   if (n2->type->code != INTEGER_TYPE) {
-    printf("Argument 2 to minus is not an integer\n");
+    printf("Argument 2 to - is not an integer\n");
     exit(1);
   }
 
   struct object *res;
   res = make_integer(n1->ival - n2->ival);
   return res;
+}
+
+struct object*
+mult(struct object *n1, struct object *n2)
+{
+  if (n1->type->code != INTEGER_TYPE) {
+    printf("Argument 1 to * is not an integer\n");
+    exit(1);
+  }
+  if (n2->type->code != INTEGER_TYPE) {
+    printf("Argument 2 to * is not an integer\n");
+    exit(1);
+  }
+
+  struct object *res;
+  res = make_integer(n1->ival * n2->ival);
+  return res;
+}
+
+struct object*
+idiv(struct object *n1, struct object *n2)
+{
+  if (n1->type->code != INTEGER_TYPE) {
+    printf("Argument 1 to / is not an integer\n");
+    exit(1);
+  }
+  if (n2->type->code != INTEGER_TYPE) {
+    printf("Argument 2 to / is not an integer\n");
+    exit(1);
+  }
+
+  struct object *res;
+  res = make_integer(n1->ival / n2->ival);
+  return res;
+}
+
+struct object*
+iequal(struct object *n1, struct object *n2)
+{
+  if (n1->type->code != INTEGER_TYPE) {
+    printf("Argument 1 to = is not an integer\n");
+    exit(1);
+  }
+  if (n2->type->code != INTEGER_TYPE) {
+    printf("Argument 2 to = is not an integer\n");
+    exit(1);
+  }
+
+  if (n1->ival == n2->ival) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+struct object*
+eq_p(struct object *o1, struct object *o2)
+{
+  if (o1 == o2) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+struct object*
+object_type(struct object *obj)
+{
+  return make_integer(obj->type->code);
 }
