@@ -9,10 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void compile_to(struct object *exprs,
-                       struct instruction **pc);
-static void compile_comb_to(struct object *exprs,
-                            struct instruction **pc);
+static void compile_seq(struct object *exprs,
+                        struct instruction **pc);
+static void compile_list(struct object *exprs,
+                         struct instruction **pc);
+static void compile_elem(struct object *exprs,
+                         struct instruction **pc);
+static void compile_comb(struct object *exprs,
+                         struct instruction **pc);
 
 struct instruction*
 compile(struct object *exprs)
@@ -22,51 +26,73 @@ compile(struct object *exprs)
   memset(prog, 0, sizeof(struct instruction) * 1024);
   struct instruction *pc = prog;
 
-  compile_to(exprs, &pc);
+  compile_seq(exprs, &pc);
   pc->op = RET;
   ++pc;
   pc->op = END;
   return prog;
 }
 
+// compiles each element, but only keeps the last value
 void
-compile_to(struct object *exprs, struct instruction **pc)
+compile_seq(struct object *exprs, struct instruction **pc)
 {
   struct object *next = exprs;
 
   while (next != NIL) {
-    struct object *obj = car(next);
-    switch (obj->type->code) {
-    case NIL_TYPE:
-    case BOOLEAN_TYPE:
-    case INTEGER_TYPE:
-    case STRING_TYPE:
-      (*pc)->op = PUSH;
-      (*pc)->arg = obj;
+    compile_elem(car(next), pc);
+    if (cdr(next) != NIL) {
+      (*pc)->op = POP;
       ++(*pc);
-      break;
-    case SYMBOL_TYPE:
-      (*pc)->op = LOOKUP;
-      (*pc)->arg = obj;
-      ++(*pc);
-      break;
-    case PAIR_TYPE:
-      compile_comb_to(obj, pc);
-      break;
     }
     next = cdr(next);
   }
 }
 
+// just compiles each element
 void
-compile_comb_to(struct object *lst, struct instruction **pc)
+compile_list(struct object *exprs, struct instruction **pc)
+{
+  struct object *next = exprs;
+
+  while (next != NIL) {
+    compile_elem(car(next), pc);
+    next = cdr(next);
+  }
+}
+
+void
+compile_elem(struct object *obj, struct instruction **pc)
+{
+  switch (obj->type->code) {
+  case NIL_TYPE:
+  case BOOLEAN_TYPE:
+  case INTEGER_TYPE:
+  case STRING_TYPE:
+    (*pc)->op = PUSH;
+    (*pc)->arg = obj;
+    ++(*pc);
+    break;
+  case SYMBOL_TYPE:
+    (*pc)->op = LOOKUP;
+    (*pc)->arg = obj;
+    ++(*pc);
+    break;
+  case PAIR_TYPE:
+    compile_comb(obj, pc);
+    break;
+  }
+}
+
+void
+compile_comb(struct object *lst, struct instruction **pc)
 {
   struct object *first = car(lst);
 
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "define") == 0) {
     // a definition
-    compile_to(cdr(cdr(lst)), pc);
+    compile_list(cdr(cdr(lst)), pc);
     (*pc)->op = DEFINE;
     (*pc)->arg = car(cdr(lst));
     ++(*pc);
@@ -106,7 +132,7 @@ compile_comb_to(struct object *lst, struct instruction **pc)
     (*pc)->op = LAMBDA;
     (*pc)->arg = alt;
     ++(*pc);
-    compile_to(make_pair(car(cdr(lst)), NIL), pc);
+    compile_list(make_pair(car(cdr(lst)), NIL), pc);
     (*pc)->op = IF;
     ++(*pc);
     return;
@@ -114,7 +140,7 @@ compile_comb_to(struct object *lst, struct instruction **pc)
 
   // a regular function invocation
   int nargs = list_length_int(lst) - 1;
-  compile_to(lst, pc);
+  compile_list(lst, pc);
   (*pc)->op = PUSH;
   (*pc)->arg = make_integer(nargs);
   ++(*pc);

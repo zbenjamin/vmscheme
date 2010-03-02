@@ -49,6 +49,12 @@ eval_instruction(struct instruction **pc, struct stack *stk,
     push_stack(stk, (*pc)->arg);
     (*pc)++;
     break;
+  case POP:
+    printf("POP instruction\n");
+    value = pop_stack(stk);
+    DEC_REF(value);
+    (*pc)++;
+    break;
   case LOOKUP:
     printf("LOOKUP instruction\n");
     value = env_lookup(*env, (*pc)->arg->sval);

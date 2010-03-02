@@ -5,6 +5,7 @@ enum opcode {
   NONE,
   END,
   PUSH,
+  POP,
   LOOKUP,
   CALL,
   RET,
