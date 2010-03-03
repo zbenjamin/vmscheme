@@ -25,6 +25,7 @@ init_primitive_procs()
   DEF_PRIM("=", iequal, 2);
   DEF_PRIM("eq?", eq_p, 2);
   DEF_PRIM("object-type", object_type, 1);
+  DEF_PRIM("reverse", reverse_list, 1);
 }
 
 struct object*

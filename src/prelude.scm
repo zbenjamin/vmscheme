@@ -31,3 +31,13 @@
              (if (pair? x)
                  (list? (cdr x))
                  #f))))
+
+(define map
+  (lambda (func lst)
+    (define helper
+      (lambda (lst result)
+        (if (null? lst)
+            result
+            (helper (cdr lst)
+                    (cons (func (car lst)) result)))))
+    (reverse (helper lst ()))))
