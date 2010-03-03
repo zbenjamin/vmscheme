@@ -12,6 +12,10 @@
 #include <stack.h>
 #include <type.h>
 
+static struct object* run_code(struct object *form,
+                               struct stack *stk,
+                               struct object *env);
+
 int
 main(int argc, char* argv[])
 {
@@ -19,6 +23,10 @@ main(int argc, char* argv[])
   init_builtin_types();
   init_singleton_objects();
   init_primitive_procs();
+
+  struct stack *stk = make_stack(1024);
+
+  run_code(parse_file("prelude.scm"), stk, global_env);
 
   int ret;
   char *buf = NULL;
@@ -33,26 +41,32 @@ main(int argc, char* argv[])
     print_obj(input);
     printf("\n");
 
-    struct instruction *prog = compile(input);
-    struct stack *stk = make_stack(1024);
-    // push magic "end of instructions" return address
-    struct object *end_marker = make_code(NULL);
-    end_marker->refcount = -1;
-    push_stack(stk, end_marker);
-    push_stack(stk, global_env);
-    struct object *value;
-    eval(prog, stk, global_env);
-    value = pop_stack(stk);
+    struct object *value = run_code(input, stk, global_env);
     assert(stack_empty(stk));
     print_obj(value);
     printf("\n");
     DEC_REF(value);
 
     free(buf);
-    dealloc_stack(stk);
     DEC_REF(input);
-    dealloc_bytecode(prog);
     buf = NULL;
   }
+  dealloc_stack(stk);
   return 0;
+}
+
+struct object *
+run_code(struct object *form, struct stack *stk,
+         struct object *env)
+{
+  struct instruction *prog = compile(form);
+  // push magic "end of instructions" return address
+  struct object *end_marker = make_code(NULL);
+  end_marker->refcount = -1;
+  push_stack(stk, end_marker);
+  push_stack(stk, env);
+
+  eval(prog, stk, env);
+  dealloc_bytecode(prog);
+  return pop_stack(stk);
 }
