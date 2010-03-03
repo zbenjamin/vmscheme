@@ -28,4 +28,6 @@
 (define list?
   (lambda (x) (if (null? x)
              #t
-             (pair? x))))
+             (if (pair? x)
+                 (list? (cdr x))
+                 #f))))
