@@ -4,6 +4,7 @@
 
 %option nounput
 %option noinput
+%option noyywrap
 %option bison-bridge
 
 DIGIT    [0-9]
