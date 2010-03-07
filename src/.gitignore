@@ -1,2 +1,5 @@
 *.o
 vmscheme
+scanner.c
+parser.h
+parser.c
