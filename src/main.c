@@ -7,7 +7,7 @@
 #include <compiler.h>
 #include <environment.h>
 #include <instruction.h>
-#include <parser.h>
+#include <parser_aux.h>
 #include <primitive_procedures.h>
 #include <stack.h>
 #include <type.h>
@@ -15,7 +15,6 @@
 static struct object* run_code(struct object *form,
                                struct stack *stk,
                                struct object *env);
-
 int
 main(int argc, char* argv[])
 {
@@ -26,18 +25,14 @@ main(int argc, char* argv[])
 
   struct stack *stk = make_stack(1024);
 
-  run_code(parse_file("prelude.scm"), stk, global_env);
+  /* run_code(parse_file("prelude.scm"), stk, global_env); */
 
-  int ret;
-  char *buf = NULL;
-  size_t nchars;
   while (1) {
     printf("> ");
-    ret = getline(&buf, &nchars, stdin);
-    if (ret == -1) {
+    struct object *input = parse_interactive();
+    if (input == NULL) {
       break;
     }
-    struct object *input = parse(buf);
     print_obj(input);
     printf("\n");
 
@@ -47,9 +42,7 @@ main(int argc, char* argv[])
     printf("\n");
     DEC_REF(value);
 
-    free(buf);
     DEC_REF(input);
-    buf = NULL;
   }
   dealloc_stack(stk);
   return 0;

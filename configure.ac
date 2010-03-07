@@ -7,4 +7,6 @@ AC_CONFIG_FILES([
    Makefile
    src/Makefile
 ])
+AM_PROG_LEX
+AC_PROG_YACC
 AC_OUTPUT

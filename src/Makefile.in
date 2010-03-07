@@ -34,7 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 bin_PROGRAMS = vmscheme$(EXEEXT)
 subdir = src
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in parser.c \
+	scanner.c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -47,9 +48,9 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_vmscheme_OBJECTS = builtin_types.$(OBJEXT) environment.$(OBJEXT) \
 	instruction.$(OBJEXT) main.$(OBJEXT) object.$(OBJEXT) \
-	parser.$(OBJEXT) primitive_procedures.$(OBJEXT) \
-	stack.$(OBJEXT) type.$(OBJEXT) compiler.$(OBJEXT) \
-	utils.$(OBJEXT) eval.$(OBJEXT)
+	primitive_procedures.$(OBJEXT) stack.$(OBJEXT) type.$(OBJEXT) \
+	compiler.$(OBJEXT) utils.$(OBJEXT) eval.$(OBJEXT) \
+	parser.$(OBJEXT) scanner.$(OBJEXT) parser_aux.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -60,6 +61,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
+YLWRAP = $(top_srcdir)/ylwrap
+YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 SOURCES = $(vmscheme_SOURCES)
 DIST_SOURCES = $(vmscheme_SOURCES)
 ETAGS = etags
@@ -88,8 +92,11 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LEX = @LEX@
+LEXLIB = @LEXLIB@
+LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+LIBS := -lfl
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
@@ -106,6 +113,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+YACC = @YACC@
+YFLAGS = @YFLAGS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -157,7 +166,6 @@ vmscheme_SOURCES = builtin_types.c \
                    object.c \
                    object.h \
                    opcode.h \
-                   parser.c \
                    parser.h \
                    primitive_procedures.c \
                    primitive_procedures.h \
@@ -170,12 +178,16 @@ vmscheme_SOURCES = builtin_types.c \
                    utils.c \
                    utils.h \
                    eval.c \
-                   eval.h
+                   eval.h \
+                   parser.y \
+                   scanner.l \
+                   parser_aux.c \
+                   parser_aux.h
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .l .o .obj .y
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -261,7 +273,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser_aux.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/primitive_procedures.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
@@ -279,6 +293,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+.l.c:
+	$(am__skiplex) $(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)
+
+.y.c:
+	$(am__skipyacc) $(SHELL) $(YLWRAP) $< y.tab.c $@ y.tab.h $*.h y.output $*.output -- $(YACCCOMPILE)
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -394,6 +414,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-rm -f parser.c
+	-rm -f scanner.c
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
