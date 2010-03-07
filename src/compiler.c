@@ -90,6 +90,13 @@ compile_comb(struct object *lst, struct instruction **pc)
   struct object *first = car(lst);
 
   if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "quote") == 0) {
+    (*pc)->op = PUSH;
+    (*pc)->arg = car(cdr(lst));
+    ++(*pc);
+    return;
+  }
+  if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "define") == 0) {
     // a definition
     compile_list(cdr(cdr(lst)), pc);

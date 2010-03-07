@@ -26,6 +26,7 @@ RESERVED [\[\]|]
 
 #t { return BOOL_TRUE; }
 #f { return BOOL_FALSE; }
+' { return QUOTE; }
 
 {RESERVED}  {
   printf("reserved character encountered: %s\n", yytext);

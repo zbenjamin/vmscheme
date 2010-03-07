@@ -18,6 +18,7 @@
 %token <str> SYMBOL
 %token <num> BOOL_TRUE
 %token <num> BOOL_FALSE
+%token <num> QUOTE
 
 %type <obj> prog
 %type <obj> expr
@@ -58,6 +59,8 @@ expr: NUMBER { $$ = make_integer($1); }
     | SYMBOL { $$ = make_symbol($1); }
     | BOOL_TRUE { $$ = TRUE; }
     | BOOL_FALSE { $$ = FALSE; }
+    | QUOTE expr { $$ = make_pair(make_symbol("quote"),
+                                  make_pair($2, NIL)); }
     | LP exprseq RP { $$ = reverse_list($2); }
   ;
 
