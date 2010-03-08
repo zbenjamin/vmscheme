@@ -25,7 +25,7 @@ main(int argc, char* argv[])
 
   struct stack *stk = make_stack(1024);
 
-  /* run_code(parse_file("prelude.scm"), stk, global_env); */
+  run_code(parse_file("prelude.scm"), stk, global_env);
 
   while (1) {
     printf("> ");

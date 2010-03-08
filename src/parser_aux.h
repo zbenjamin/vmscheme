@@ -4,6 +4,6 @@
 #include <object.h>
 
 struct object* parse_interactive();
-struct object* parse_file();
+struct object* parse_file(const char *filename);
 
 #endif // VMSCHEME_PARSER_AUX
