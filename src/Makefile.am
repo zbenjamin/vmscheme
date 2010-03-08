@@ -1,7 +1,6 @@
 CFLAGS := -g -O0 -Wall -Werror
 bin_PROGRAMS = vmscheme
-vmscheme_SOURCES = builtin_types.c \
-                   environment.c \
+vmscheme_SOURCES = environment.c \
                    environment.h \
                    instruction.h \
                    instruction.c \

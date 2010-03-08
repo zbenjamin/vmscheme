@@ -8,6 +8,21 @@
 static struct type type_table[MAX_TYPES];
 static unsigned int next_entry = 0;
 
+void
+init_builtin_types()
+{
+  make_type("nil");
+  make_type("boolean");
+  make_type("integer");
+  make_type("string");
+  make_type("symbol");
+  make_type("pair");
+  make_type("procedure");
+  make_type("primitive-procedure");
+  make_type("code");
+  make_type("environment");
+}
+
 struct type*
 get_type(int typeid)
 {

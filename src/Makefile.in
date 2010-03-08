@@ -46,11 +46,11 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_vmscheme_OBJECTS = builtin_types.$(OBJEXT) environment.$(OBJEXT) \
-	instruction.$(OBJEXT) main.$(OBJEXT) object.$(OBJEXT) \
-	primitive_procedures.$(OBJEXT) stack.$(OBJEXT) type.$(OBJEXT) \
-	compiler.$(OBJEXT) utils.$(OBJEXT) eval.$(OBJEXT) \
-	parser.$(OBJEXT) scanner.$(OBJEXT) parser_aux.$(OBJEXT)
+am_vmscheme_OBJECTS = environment.$(OBJEXT) instruction.$(OBJEXT) \
+	main.$(OBJEXT) object.$(OBJEXT) primitive_procedures.$(OBJEXT) \
+	stack.$(OBJEXT) type.$(OBJEXT) compiler.$(OBJEXT) \
+	utils.$(OBJEXT) eval.$(OBJEXT) parser.$(OBJEXT) \
+	scanner.$(OBJEXT) parser_aux.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -157,8 +157,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-vmscheme_SOURCES = builtin_types.c \
-                   environment.c \
+vmscheme_SOURCES = environment.c \
                    environment.h \
                    instruction.h \
                    instruction.c \
@@ -265,7 +264,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/builtin_types.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compiler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@
