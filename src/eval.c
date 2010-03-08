@@ -1,18 +1,25 @@
 #include <eval.h>
 
+#include <compiler.h>
 #include <object.h>
 #include <opcode.h>
 #include <primitive_procedures.h>
 #include <utils.h>
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+static void eval_instructions(struct instruction *prog,
+                              struct stack *stk,
+                              struct object *env);
 static int eval_instruction(struct instruction **ins,
                              struct stack *stk,
                              struct object **env);
 static void eval_call(struct instruction **pc, struct stack *stk,
                       struct object **env);
+static void eval_call0(struct stack *stk, struct object *func,
+                       struct object *args);
 static void eval_call1(struct stack *stk, struct object *func,
                        struct object *args);
 static void eval_call2(struct stack *stk, struct object *func,
@@ -21,16 +28,41 @@ static void eval_if(struct instruction **pc, struct stack *stk,
                     struct object **env);
 
 
+struct object *
+eval(struct object *form, struct object *env)
+{
+  struct object *seq = make_pair(form, NIL);
+  struct object *ret = eval_sequence(seq, env);
+  DEC_REF(seq);
+  return ret;
+}
+
+struct object *
+eval_sequence(struct object *forms, struct object *env)
+{
+  struct instruction *prog = compile(forms);
+  struct stack *stk = make_stack(1024);
+  // push magic "end of instructions" return address
+  struct object *end_marker = make_code(NULL);
+  end_marker->refcount = -1;
+  push_stack(stk, end_marker);
+  push_stack(stk, env);
+
+  eval_instructions(prog, stk, env);
+  struct object *value = pop_stack(stk);
+  dealloc_bytecode(prog);
+  assert(stack_empty(stk));
+  dealloc_stack(stk);
+  return value;
+}
+
 void
-eval(struct instruction *prog, struct stack *stk,
-     struct object *env)
+eval_instructions(struct instruction *prog, struct stack *stk,
+                  struct object *env)
 {
   struct instruction *pc = prog;
-  while (1) {
-    if (eval_instruction(&pc, stk, &env)) {
-      return;
-    }
-  }
+
+  while (! eval_instruction(&pc, stk, &env)) { }
 }
 
 int
@@ -164,6 +196,9 @@ eval_call(struct instruction **pc, struct stack *stk,
 
   // primitive function dispatch
   switch (num_args->ival) {
+  case 0:
+    eval_call0(stk, func, args);
+    break;
   case 1:
     eval_call1(stk, func, args);
     break;
@@ -177,6 +212,18 @@ eval_call(struct instruction **pc, struct stack *stk,
     exit(1);
   }
   ++(*pc);
+}
+
+void
+eval_call0(struct stack *stk, struct object *func,
+           struct object *args)
+{
+  struct object *result;
+  struct primitive_proc_rec *rec = func->pproc_val;
+  struct object *(*function)();
+  function = (struct object *(*)()) rec->func;
+  result = function();
+  push_stack(stk, result);
 }
 
 void

@@ -230,6 +230,9 @@ print_obj(struct object *obj)
   case PROCEDURE_TYPE:
     printf("#<procedure>");
     break;
+  case ENVIRONMENT_TYPE:
+    printf("#<environment>");
+    break;
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);
   }

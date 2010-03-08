@@ -14,6 +14,7 @@ void
 init_global_env()
 {
   global_env = make_environment(NULL);
+  global_env->refcount = -1;
 }
 
 void

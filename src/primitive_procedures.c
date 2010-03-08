@@ -1,12 +1,19 @@
 #include <primitive_procedures.h>
 
 #include <environment.h>
+#include <eval.h>
 #include <object.h>
 #include <type.h>
 #include <utils.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+
+static struct object*
+the_global_environment()
+{
+  return global_env;
+}
 
 #define DEF_PRIM(name, func, arity)                             \
   env_define(global_env, name,                            \
@@ -26,6 +33,8 @@ init_primitive_procs()
   DEF_PRIM("eq?", eq_p, 2);
   DEF_PRIM("object-type", object_type, 1);
   DEF_PRIM("reverse", reverse_list, 1);
+  DEF_PRIM("eval", eval, 2);
+  DEF_PRIM("the-global-environment", the_global_environment, 0);
 }
 
 struct object*

@@ -5,7 +5,10 @@
 #include <stack.h>
 #include <environment.h>
 
-void eval(struct instruction *prog, struct stack *stk,
-          struct object *env);
+struct object* eval(struct object *form,
+                    struct object *env);
+struct object* eval_sequence(struct object *forms,
+                             struct object *env);
+
 
 #endif // VMSCHEME_EVAL_H
