@@ -187,7 +187,7 @@ print_obj(struct object *obj)
 
   switch (obj->type->code) {
   case NIL_TYPE:
-    printf("'()");
+    printf("()");
     break;
   case BOOLEAN_TYPE:
     if (obj == TRUE) {
