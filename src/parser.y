@@ -62,6 +62,7 @@ expr: NUMBER { $$ = make_integer($1); }
     | QUOTE expr { $$ = make_pair(make_symbol("quote"),
                                   make_pair($2, NIL)); }
     | LP exprseq RP { $$ = reverse_list($2); }
+    | LP RP { $$ = NIL; }
   ;
 
 exprseq: expr         { $$ = make_pair($1, NIL); }
