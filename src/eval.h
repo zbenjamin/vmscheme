@@ -10,5 +10,10 @@ struct object* eval(struct object *form,
 struct object* eval_sequence(struct object *forms,
                              struct object *env);
 
+struct vm_context {
+  struct instruction *pc;
+  struct stack *stk;
+  struct object *env;
+};
 
 #endif // VMSCHEME_EVAL_H

@@ -10,22 +10,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void eval_instructions(struct instruction *prog,
-                              struct stack *stk,
-                              struct object *env);
-static int eval_instruction(struct instruction **ins,
-                             struct stack *stk,
-                             struct object **env);
-static void eval_call(struct instruction **pc, struct stack *stk,
-                      struct object **env);
+static void eval_instructions(struct vm_context *ctx);
+static int eval_instruction(struct vm_context *ctx);
+static void eval_call(struct vm_context *ctx);
 static void eval_call0(struct stack *stk, struct object *func,
                        struct object *args);
 static void eval_call1(struct stack *stk, struct object *func,
                        struct object *args);
 static void eval_call2(struct stack *stk, struct object *func,
                        struct object *args);
-static void eval_if(struct instruction **pc, struct stack *stk,
-                    struct object **env);
+static void eval_if(struct vm_context *ctx);
 
 
 struct object *
@@ -47,8 +41,9 @@ eval_sequence(struct object *forms, struct object *env)
   end_marker->refcount = -1;
   push_stack(stk, end_marker);
   push_stack(stk, env);
+  struct vm_context ctx = { prog, stk, env };
 
-  eval_instructions(prog, stk, env);
+  eval_instructions(&ctx);
   struct object *value = pop_stack(stk);
   dealloc_bytecode(prog);
   assert(stack_empty(stk));
@@ -57,82 +52,78 @@ eval_sequence(struct object *forms, struct object *env)
 }
 
 void
-eval_instructions(struct instruction *prog, struct stack *stk,
-                  struct object *env)
+eval_instructions(struct vm_context *ctx)
 {
-  struct instruction *pc = prog;
-
-  while (! eval_instruction(&pc, stk, &env)) { }
+  while (! eval_instruction(ctx)) { }
 }
 
 int
-eval_instruction(struct instruction **pc, struct stack *stk,
-                 struct object **env)
+eval_instruction(struct vm_context *ctx)
 {
   struct object *value;
 
-  switch ((*pc)->op) {
+  switch (ctx->pc->op) {
   case NONE:
     printf("Error: tried to execute a NONE op\n");
     exit(1);
     break;
   case PUSH:
     /* printf("PUSH instruction\n"); */
-    push_stack(stk, (*pc)->arg);
-    (*pc)++;
+    push_stack(ctx->stk, ctx->pc->arg);
+    ++ctx->pc;
     break;
   case POP:
     /* printf("POP instruction\n"); */
-    value = pop_stack(stk);
+    value = pop_stack(ctx->stk);
     DEC_REF(value);
-    (*pc)++;
+    ++ctx->pc;
     break;
   case LOOKUP:
     /* printf("LOOKUP instruction\n"); */
-    value = env_lookup(*env, (*pc)->arg->sval);
+    value = env_lookup(ctx->env, ctx->pc->arg->sval);
     if (! value) {
-      printf("Unbound name: %s\n", (*pc)->arg->sval);
+      printf("Unbound name: %s\n", ctx->pc->arg->sval);
       exit(1);
     }
-    push_stack(stk, value);
-    (*pc)++;
+    push_stack(ctx->stk, value);
+    ++ctx->pc;
     break;
   case CALL:
     /* printf("CALL instruction @ %p\n", *pc); */
-    eval_call(pc, stk, env);
+    eval_call(ctx);
     break;
   case RET:
-    value = pop_stack(stk);
-    struct object *orig_env = pop_stack(stk);
-    struct object *retaddr = pop_stack(stk);
+    value = pop_stack(ctx->stk);
+    struct object *orig_env = pop_stack(ctx->stk);
+    struct object *retaddr = pop_stack(ctx->stk);
     /* printf("RET instruction @ %p to %p\n", *pc, retaddr->cval); */
-    push_stack(stk, value);
-    *env = orig_env;
-    *pc = retaddr->cval;
-    if (*pc == NULL) {
+    push_stack(ctx->stk, value);
+    ctx->env = orig_env;
+    ctx->pc = retaddr->cval;
+    if (ctx->pc == NULL) {
       return 1;
     }
     break;
   case DEFINE:
     /* printf("DEFINE instruction\n"); */
-    value = pop_stack(stk);
-    env_define(*env, (*pc)->arg->sval, value);
-    (*pc)++;
+    value = pop_stack(ctx->stk);
+    env_define(ctx->env, ctx->pc->arg->sval, value);
+    ++ctx->pc;
     break;
   case LAMBDA:
     /* printf("LAMBDA instruction\n"); */
-    value = (*pc)->arg;
-    push_stack(stk, make_procedure(value->proc_val->params,
-                                   value->proc_val->code,
-                                   *env));
-    (*pc)++;
+    value = ctx->pc->arg;
+    push_stack(ctx->stk, make_procedure(value->proc_val->params,
+                                        value->proc_val->code,
+                                        ctx->env));
+    ++ctx->pc;
     break;
   case IF:
     /* printf("IF instruction\n"); */
-    eval_if(pc, stk, env);
+    eval_if(ctx);
     break;
   default:
-    printf("Error: unknown opcode: %d\n", (*pc)->op);
+    printf("Error: unknown opcode: %d\n", ctx->pc->op);
     exit(1);
   }
 
@@ -140,10 +131,9 @@ eval_instruction(struct instruction **pc, struct stack *stk,
 }
 
 void
-eval_call(struct instruction **pc, struct stack *stk, 
-          struct object **env)
+eval_call(struct vm_context *ctx)
 {
-  struct object *num_args = pop_stack(stk);
+  struct object *num_args = pop_stack(ctx->stk);
   struct object *args = NIL;
   if (num_args->type->code != INTEGER_TYPE) {
     printf("Internal error: number of arguments to call "
@@ -153,11 +143,11 @@ eval_call(struct instruction **pc, struct stack *stk,
 
   int num = num_args->ival;
   while (num) {
-    args = make_pair(pop_stack(stk), args);
+    args = make_pair(pop_stack(ctx->stk), args);
     --num;
   }
 
-  struct object *func = pop_stack(stk);
+  struct object *func = pop_stack(ctx->stk);
   if (func->type->code != PRIMITIVE_PROC_TYPE
       && func->type->code != PROCEDURE_TYPE) {
     printf("Cannot apply object of type %s\n",
@@ -180,30 +170,30 @@ eval_call(struct instruction **pc, struct stack *stk,
   if (func->type->code == PROCEDURE_TYPE) {
     // push the return value onto the stack.  We don't want the
     // return addr garbage collected.
-    struct object *retaddr = make_code(*pc + 1);
+    struct object *retaddr = make_code(ctx->pc + 1);
     retaddr->refcount = -1;
 
-    push_stack(stk, retaddr);
-    push_stack(stk, *env);
+    push_stack(ctx->stk, retaddr);
+    push_stack(ctx->stk, ctx->env);
 
     struct object *new_env;
     new_env = make_environment(func->proc_val->env);
     env_bind_names(new_env, func->proc_val->params, args);
-    *pc = func->proc_val->code->cval;
-    *env = new_env;
+    ctx->pc = func->proc_val->code->cval;
+    ctx->env = new_env;
     return;
   }
 
   // primitive function dispatch
   switch (num_args->ival) {
   case 0:
-    eval_call0(stk, func, args);
+    eval_call0(ctx->stk, func, args);
     break;
   case 1:
-    eval_call1(stk, func, args);
+    eval_call1(ctx->stk, func, args);
     break;
   case 2:
-    eval_call2(stk, func, args);
+    eval_call2(ctx->stk, func, args);
     break;
   default:
     printf("primitive procedures with %d arguments "
@@ -211,7 +201,7 @@ eval_call(struct instruction **pc, struct stack *stk,
            num_args->ival);
     exit(1);
   }
-  ++(*pc);
+  ++ctx->pc;
 }
 
 void
@@ -260,12 +250,11 @@ eval_call2(struct stack *stk, struct object *func,
 }
 
 void
-eval_if(struct instruction **pc, struct stack *stk,
-        struct object **env)
+eval_if(struct vm_context *ctx)
 {
-  struct object *testval = pop_stack(stk);
-  struct object *alt = pop_stack(stk);
-  struct object *conseq = pop_stack(stk);
+  struct object *testval = pop_stack(ctx->stk);
+  struct object *alt = pop_stack(ctx->stk);
+  struct object *conseq = pop_stack(ctx->stk);
 
   struct object *action;
   if (testval == FALSE) {
@@ -274,7 +263,7 @@ eval_if(struct instruction **pc, struct stack *stk,
     action = conseq;
   }
 
-  push_stack(stk, action);
-  push_stack(stk, make_integer(0));
-  eval_call(pc, stk, env);
+  push_stack(ctx->stk, action);
+  push_stack(ctx->stk, make_integer(0));
+  eval_call(ctx);
 }
