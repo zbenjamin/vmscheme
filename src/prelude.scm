@@ -32,6 +32,39 @@
                  (list? (cdr x))
                  #f))))
 
+(define not
+  (lambda (x)
+    (if (eq? x #f)
+        #t
+        #f)))
+
+;; assume arg is a list
+(define last-pair
+  (lambda (lst)
+    (if (null? (cdr lst))
+        lst
+        (if (not (pair? (cdr lst)))
+            lst
+            (last-pair (cdr lst))))))
+
+(define append
+  (lambda (lst1 lst2)
+    (if (null? lst1)
+        lst2
+        (cons (car lst1)
+              (append (cdr lst1) lst2)))))
+
+(define length
+  (lambda (lst)
+    (define helper
+      (lambda (lst result)
+        (if (null? lst)
+            result
+            (if (not (pair? lst))
+                (error)
+                (helper (cdr lst) (+ 1 result))))))
+    (helper lst 0)))
+
 (define map
   (lambda (func lst)
     (define helper
