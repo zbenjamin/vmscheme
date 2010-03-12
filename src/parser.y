@@ -19,6 +19,9 @@
 %token <num> BOOL_TRUE
 %token <num> BOOL_FALSE
 %token <num> QUOTE
+%token <num> QUASIQUOTE
+%token <num> UNQUOTE
+%token <num> UNQUOTE_SPLICING
 
 %type <obj> prog
 %type <obj> expr
@@ -61,6 +64,12 @@ expr: NUMBER { $$ = make_integer($1); }
     | BOOL_FALSE { $$ = FALSE; }
     | QUOTE expr { $$ = make_pair(make_symbol("quote"),
                                   make_pair($2, NIL)); }
+    | QUASIQUOTE expr { $$ = make_pair(make_symbol("quasiquote"),
+                                       make_pair($2, NIL)); }
+    | UNQUOTE expr { $$ = make_pair(make_symbol("unquote"),
+                                    make_pair($2, NIL)); }
+    | UNQUOTE_SPLICING expr { $$ = make_pair(make_symbol("unquote-splicing"),
+                                             make_pair($2, NIL)); }
     | LP exprseq RP { $$ = reverse_list($2); }
     | LP RP { $$ = NIL; }
   ;

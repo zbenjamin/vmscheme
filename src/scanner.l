@@ -10,7 +10,7 @@ int interactive;
 %option bison-bridge
 
 DIGIT    [0-9]
-SYMCHARS [a-zA-Z!$%&*+-./:<=>?@^_~]
+SYMCHARS [-a-zA-Z!$%&*+./:<=>?@^_~]
 RESERVED [\[\]|]
 
 %%
@@ -30,6 +30,9 @@ RESERVED [\[\]|]
 #t { return BOOL_TRUE; }
 #f { return BOOL_FALSE; }
 ' { return QUOTE; }
+` { return QUASIQUOTE; }
+, { return UNQUOTE; }
+,@ { return UNQUOTE_SPLICING; }
 
 [ \t]                            /* ignore whitespace */
 ;.*                              /* ignore comments */
