@@ -141,7 +141,8 @@ make_procedure(struct object *params,
 struct object*
 make_primitive_procedure(void *func,
                          unsigned int arity,
-                         const char *name)
+                         const char *name,
+                         unsigned int takes_ctx)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(PRIMITIVE_PROC_TYPE);
@@ -150,6 +151,7 @@ make_primitive_procedure(void *func,
   rec->arity = arity;
   rec->func = func;
   rec->name = name;
+  rec->takes_ctx = takes_ctx;
   ret->pproc_val = rec;
   ret->refcount = 1;
   return ret;

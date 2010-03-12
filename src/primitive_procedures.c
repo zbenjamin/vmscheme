@@ -16,31 +16,32 @@ the_global_environment()
   return global_env;
 }
 
-#define DEF_PRIM(name, func, arity)                             \
+#define DEF_PRIM(name, func, arity, takes_ctx)            \
   env_define(global_env, name,                            \
-             make_primitive_procedure(func, arity, name))
+             make_primitive_procedure(func, arity, name, takes_ctx))
 
 void
 init_primitive_procs()
 {
-  DEF_PRIM("cons", make_pair, 2);
-  DEF_PRIM("car", car, 1);
-  DEF_PRIM("cdr", cdr, 1);
-  DEF_PRIM("set-car!", set_car, 2);
-  DEF_PRIM("set-cdr!", set_cdr, 2);
-  DEF_PRIM("+", plus, 2);
-  DEF_PRIM("-", minus, 2);
-  DEF_PRIM("*", mult, 2);
-  DEF_PRIM("/", idiv, 2);
-  DEF_PRIM("=", iequal, 2);
-  DEF_PRIM("eq?", eq_p, 2);
-  DEF_PRIM("eqv?", eqv_p, 2);
-  DEF_PRIM("object-type", object_type, 1);
-  DEF_PRIM("reverse", reverse_list, 1);
-  DEF_PRIM("last-pair", last_pair, 1);
-  DEF_PRIM("eval", eval, 2);
-  DEF_PRIM("the-global-environment", the_global_environment, 0);
-  DEF_PRIM("display", print_obj, 1);
+  DEF_PRIM("cons", make_pair, 2, 0);
+  DEF_PRIM("car", car, 1, 0);
+  DEF_PRIM("cdr", cdr, 1, 0);
+  DEF_PRIM("set-car!", set_car, 2, 0);
+  DEF_PRIM("set-cdr!", set_cdr, 2, 0);
+  DEF_PRIM("+", plus, 2, 0);
+  DEF_PRIM("-", minus, 2, 0);
+  DEF_PRIM("*", mult, 2, 0);
+  DEF_PRIM("/", idiv, 2, 0);
+  DEF_PRIM("=", iequal, 2, 0);
+  DEF_PRIM("eq?", eq_p, 2, 0);
+  DEF_PRIM("eqv?", eqv_p, 2, 0);
+  DEF_PRIM("object-type", object_type, 1, 0);
+  DEF_PRIM("reverse", reverse_list, 1, 0);
+  DEF_PRIM("last-pair", last_pair, 1, 0);
+  DEF_PRIM("eval", eval, 2, 0);
+  DEF_PRIM("apply", apply, 2, 1);
+  DEF_PRIM("the-global-environment", the_global_environment, 0, 0);
+  DEF_PRIM("display", print_obj, 1, 0);
 }
 
 struct object*

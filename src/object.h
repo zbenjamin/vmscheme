@@ -28,6 +28,7 @@ struct primitive_proc_rec {
   unsigned int arity;
   void *func;
   const char *name;
+  unsigned int takes_ctx;
 };
 
 #define INC_REF(x)                                  \
@@ -59,7 +60,8 @@ struct object* make_procedure(struct object *params,
                               struct object *env);
 struct object* make_primitive_procedure(void *func,
                                         unsigned int arity,
-                                        const char* name);
+                                        const char* name,
+                                        unsigned int takes_ctx);
 struct object* make_code(struct instruction *code);
 struct object* make_environment(struct object *parent);
 

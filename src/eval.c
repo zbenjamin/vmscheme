@@ -15,11 +15,14 @@ static int eval_instruction(struct vm_context *ctx);
 static void eval_call(struct vm_context *ctx);
 static void eval_if(struct vm_context *ctx);
 static struct object *primitive_apply0(struct object *func,
-                                       struct object *args);
+                                       struct object *args,
+                                       struct vm_context *ctx);
 static struct object *primitive_apply1(struct object *func,
-                                       struct object *args);
+                                       struct object *args,
+                                       struct vm_context *ctx);
 static struct object *primitive_apply2(struct object *func,
-                                       struct object *args);
+                                       struct object *args,
+                                       struct vm_context *ctx);
 
 
 struct object *
@@ -223,13 +226,13 @@ apply(struct object *func, struct object *args,
   // primitive function dispatch
   switch (num_args) {
   case 0:
-    result = primitive_apply0(func, args);
+    result = primitive_apply0(func, args, ctx);
     break;
   case 1:
-    result = primitive_apply1(func, args);
+    result = primitive_apply1(func, args, ctx);
     break;
   case 2:
-    result = primitive_apply2(func, args);
+    result = primitive_apply2(func, args, ctx);
     break;
   default:
     printf("primitive procedures with %d arguments "
@@ -241,27 +244,43 @@ apply(struct object *func, struct object *args,
 }
 
 struct object *
-primitive_apply0(struct object *func, struct object *args)
+primitive_apply0(struct object *func, struct object *args,
+                 struct vm_context *ctx)
 {
   struct primitive_proc_rec *rec = func->pproc_val;
-  struct object *(*function)();
-  function = (struct object *(*)()) rec->func;
-  return function();
+  if (rec->takes_ctx) {
+    struct object *(*function)(struct vm_context*);
+    function = (struct object *(*)(struct vm_context*)) rec->func;
+    return function(ctx);
+  } else {
+    struct object *(*function)();
+    function = (struct object *(*)()) rec->func;
+    return function();
+  }
 }
 
 struct object *
-primitive_apply1(struct object *func, struct object *args)
+primitive_apply1(struct object *func, struct object *args,
+                 struct vm_context *ctx)
 {
   struct object *arg1 = car(args);
 
   struct primitive_proc_rec *rec = func->pproc_val;
-  struct object *(*function)(struct object*);
-  function = (struct object *(*)(struct object*)) rec->func;
-  return function(arg1);
+  if (rec->takes_ctx) {
+    struct object *(*function)(struct object*, struct vm_context*);
+    function = (struct object *(*)(struct object*,
+                                   struct vm_context*)) rec->func;
+    return function(arg1, ctx);
+  } else {
+    struct object *(*function)(struct object*);
+    function = (struct object *(*)(struct object*)) rec->func;
+    return function(arg1);
+  }
 }
 
 struct object *
-primitive_apply2(struct object *func, struct object *args)
+primitive_apply2(struct object *func, struct object *args,
+                 struct vm_context *ctx)
 {
   struct object *arg1 = car(args);
   args = cdr(args);
@@ -269,9 +288,19 @@ primitive_apply2(struct object *func, struct object *args)
   args = cdr(args);
 
   struct primitive_proc_rec *rec = func->pproc_val;
-  struct object *(*function)(struct object*,
-                             struct object*);
-  function = (struct object *(*)(struct object*,
-                                 struct object*)) rec->func;
-  return function(arg1, arg2);
+  if (rec->takes_ctx) {
+    struct object *(*function)(struct object*,
+                               struct object*,
+                               struct vm_context*);
+    function = (struct object *(*)(struct object*,
+                                   struct object*,
+                                   struct vm_context*)) rec->func;
+    return function(arg1, arg2, ctx);
+  } else {
+    struct object *(*function)(struct object*,
+                               struct object*);
+    function = (struct object *(*)(struct object*,
+                                   struct object*)) rec->func;
+    return function(arg1, arg2);
+  }
 }
