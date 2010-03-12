@@ -13,13 +13,13 @@
 static void eval_instructions(struct vm_context *ctx);
 static int eval_instruction(struct vm_context *ctx);
 static void eval_call(struct vm_context *ctx);
-static void eval_call0(struct stack *stk, struct object *func,
-                       struct object *args);
-static void eval_call1(struct stack *stk, struct object *func,
-                       struct object *args);
-static void eval_call2(struct stack *stk, struct object *func,
-                       struct object *args);
 static void eval_if(struct vm_context *ctx);
+static struct object *primitive_apply0(struct object *func,
+                                       struct object *args);
+static struct object *primitive_apply1(struct object *func,
+                                       struct object *args);
+static struct object *primitive_apply2(struct object *func,
+                                       struct object *args);
 
 
 struct object *
@@ -148,6 +148,41 @@ eval_call(struct vm_context *ctx)
   }
 
   struct object *func = pop_stack(ctx->stk);
+  struct object *result;
+  result = apply(func, args, ctx);
+  // we get a result back for primitive functions, but compound
+  // functions muck with the vm context instead
+  if (result != NULL) {
+    ++ctx->pc;
+    push_stack(ctx->stk, result);
+  }
+}
+
+void
+eval_if(struct vm_context *ctx)
+{
+  struct object *testval = pop_stack(ctx->stk);
+  struct object *alt = pop_stack(ctx->stk);
+  struct object *conseq = pop_stack(ctx->stk);
+
+  struct object *action;
+  if (testval == FALSE) {
+    action = alt;
+  } else {
+    action = conseq;
+  }
+
+  push_stack(ctx->stk, action);
+  push_stack(ctx->stk, make_integer(0));
+  eval_call(ctx);
+}
+
+struct object *
+apply(struct object *func, struct object *args,
+      struct vm_context *ctx)
+{
+  unsigned int num_args = list_length_int(args);
+
   if (func->type->code != PRIMITIVE_PROC_TYPE
       && func->type->code != PROCEDURE_TYPE) {
     printf("Cannot apply object of type %s\n",
@@ -160,7 +195,7 @@ eval_call(struct vm_context *ctx)
      ? list_length_int(func->proc_val->params)
      : func->pproc_val->arity);
 
-  if (num_args->ival != num_params) {
+  if (num_args != num_params) {
       printf("Incorrect number of arguments to ");
       print_obj(func);
       printf("\n");
@@ -181,89 +216,62 @@ eval_call(struct vm_context *ctx)
     env_bind_names(new_env, func->proc_val->params, args);
     ctx->pc = func->proc_val->code->cval;
     ctx->env = new_env;
-    return;
+    return NULL;
   }
 
+  struct object *result;
   // primitive function dispatch
-  switch (num_args->ival) {
+  switch (num_args) {
   case 0:
-    eval_call0(ctx->stk, func, args);
+    result = primitive_apply0(func, args);
     break;
   case 1:
-    eval_call1(ctx->stk, func, args);
+    result = primitive_apply1(func, args);
     break;
   case 2:
-    eval_call2(ctx->stk, func, args);
+    result = primitive_apply2(func, args);
     break;
   default:
     printf("primitive procedures with %d arguments "
            "not supported yet\n",
-           num_args->ival);
+           num_args);
     exit(1);
   }
-  ++ctx->pc;
+  return result;
 }
 
-void
-eval_call0(struct stack *stk, struct object *func,
-           struct object *args)
+struct object *
+primitive_apply0(struct object *func, struct object *args)
 {
-  struct object *result;
   struct primitive_proc_rec *rec = func->pproc_val;
   struct object *(*function)();
   function = (struct object *(*)()) rec->func;
-  result = function();
-  push_stack(stk, result);
+  return function();
 }
 
-void
-eval_call1(struct stack *stk, struct object *func,
-           struct object *args)
+struct object *
+primitive_apply1(struct object *func, struct object *args)
 {
   struct object *arg1 = car(args);
 
-  struct object *result;
   struct primitive_proc_rec *rec = func->pproc_val;
   struct object *(*function)(struct object*);
   function = (struct object *(*)(struct object*)) rec->func;
-  result = function(arg1);
-  push_stack(stk, result);
+  return function(arg1);
 }
 
-void
-eval_call2(struct stack *stk, struct object *func,
-           struct object *args)
+struct object *
+primitive_apply2(struct object *func, struct object *args)
 {
   struct object *arg1 = car(args);
   args = cdr(args);
   struct object *arg2 = car(args);
   args = cdr(args);
 
-  struct object *result;
   struct primitive_proc_rec *rec = func->pproc_val;
   struct object *(*function)(struct object*,
                              struct object*);
   function = (struct object *(*)(struct object*,
                                  struct object*)) rec->func;
-  result = function(arg1, arg2);
-  push_stack(stk, result);
-}
-
-void
-eval_if(struct vm_context *ctx)
-{
-  struct object *testval = pop_stack(ctx->stk);
-  struct object *alt = pop_stack(ctx->stk);
-  struct object *conseq = pop_stack(ctx->stk);
-
-  struct object *action;
-  if (testval == FALSE) {
-    action = alt;
-  } else {
-    action = conseq;
-  }
-
-  push_stack(ctx->stk, action);
-  push_stack(ctx->stk, make_integer(0));
-  eval_call(ctx);
+  return function(arg1, arg2);
 }
