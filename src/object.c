@@ -180,7 +180,7 @@ make_environment(struct object *parent)
   return ret;
 }
 
-void
+struct object*
 print_obj(struct object *obj)
 {
   struct object *next;
@@ -236,4 +236,5 @@ print_obj(struct object *obj)
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);
   }
+  return NIL;
 }

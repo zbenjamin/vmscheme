@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static struct object*
 the_global_environment()
@@ -25,16 +26,20 @@ init_primitive_procs()
   DEF_PRIM("cons", make_pair, 2);
   DEF_PRIM("car", car, 1);
   DEF_PRIM("cdr", cdr, 1);
+  DEF_PRIM("set-car!", set_car, 2);
+  DEF_PRIM("set-cdr!", set_cdr, 2);
   DEF_PRIM("+", plus, 2);
   DEF_PRIM("-", minus, 2);
   DEF_PRIM("*", mult, 2);
   DEF_PRIM("/", idiv, 2);
   DEF_PRIM("=", iequal, 2);
   DEF_PRIM("eq?", eq_p, 2);
+  DEF_PRIM("eqv?", eqv_p, 2);
   DEF_PRIM("object-type", object_type, 1);
   DEF_PRIM("reverse", reverse_list, 1);
   DEF_PRIM("eval", eval, 2);
   DEF_PRIM("the-global-environment", the_global_environment, 0);
+  DEF_PRIM("display", print_obj, 1);
 }
 
 struct object*
@@ -55,6 +60,32 @@ cdr(const struct object *pair)
     exit(1);
   }
   return pair->pval[1];
+}
+
+struct object*
+set_car(struct object *pair, struct object *val)
+{
+  if (pair->type->code != PAIR_TYPE) {
+    printf("Wrong type for set-car!: %s\n", pair->type->name);
+    exit(1);
+  }
+  DEC_REF(pair->pval[0]);
+  INC_REF(val);
+  pair->pval[0] = val;
+  return NIL;
+}
+
+struct object*
+set_cdr(struct object *pair, struct object *val)
+{
+  if (pair->type->code != PAIR_TYPE) {
+    printf("Wrong type for set-cdr!: %s\n", pair->type->name);
+    exit(1);
+  }
+  DEC_REF(pair->pval[1]);
+  INC_REF(val);
+  pair->pval[1] = val;
+  return NIL;
 }
 
 struct object*
@@ -175,6 +206,20 @@ struct object*
 eq_p(struct object *o1, struct object *o2)
 {
   if (o1 == o2) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+struct object*
+eqv_p(struct object *o1, struct object *o2)
+{
+  // XXX
+  if (o1->type->code != SYMBOL_TYPE
+      || o2->type->code != SYMBOL_TYPE) {
+    return FALSE;
+  }
+  if (strcmp(o1->sval, o2->sval) == 0) {
     return TRUE;
   }
   return FALSE;

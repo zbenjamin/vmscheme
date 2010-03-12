@@ -63,6 +63,6 @@ struct object* make_primitive_procedure(void *func,
 struct object* make_code(struct instruction *code);
 struct object* make_environment(struct object *parent);
 
-void print_obj(struct object *obj);
+struct object* print_obj(struct object *obj);
 
 #endif // VMSCHEME_OBJECT_H
