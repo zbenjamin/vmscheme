@@ -22,6 +22,7 @@
 %token <num> QUASIQUOTE
 %token <num> UNQUOTE
 %token <num> UNQUOTE_SPLICING
+%token <num> DOT
 
 %type <obj> prog
 %type <obj> expr
@@ -68,9 +69,13 @@ expr: NUMBER { $$ = make_integer($1); }
                                        make_pair($2, NIL)); }
     | UNQUOTE expr { $$ = make_pair(make_symbol("unquote"),
                                     make_pair($2, NIL)); }
-    | UNQUOTE_SPLICING expr { $$ = make_pair(make_symbol("unquote-splicing"),
+    | UNQUOTE_SPLICING expr
+      { $$ = make_pair(make_symbol("unquote-splicing"),
                                              make_pair($2, NIL)); }
     | LP exprseq RP { $$ = reverse_list($2); }
+    | LP exprseq DOT expr RP
+      { $$ = reverse_list($2);
+        set_cdr(last_pair($$), $4); }
     | LP RP { $$ = NIL; }
   ;
 

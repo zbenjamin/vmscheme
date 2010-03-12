@@ -38,15 +38,6 @@
         #t
         #f)))
 
-;; assume arg is a list
-(define last-pair
-  (lambda (lst)
-    (if (null? (cdr lst))
-        lst
-        (if (not (pair? (cdr lst)))
-            lst
-            (last-pair (cdr lst))))))
-
 (define append
   (lambda (lst1 lst2)
     (if (null? lst1)

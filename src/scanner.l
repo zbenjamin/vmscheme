@@ -10,7 +10,11 @@ int interactive;
 %option bison-bridge
 
 DIGIT    [0-9]
-SYMCHARS [-a-zA-Z!$%&*+./:<=>?@^_~]
+LETTER   [a-zA-Z]
+SP_INITIAL [!$%&*/:<=>?^_~]
+SP_SUBSEQ  [-+.@]
+INITIAL  {LETTER}|{SP_INITIAL}
+SUBSEQ   {INITIAL}|{DIGIT}|{SP_SUBSEQ}
 RESERVED [\[\]|]
 
 %%
@@ -22,7 +26,8 @@ RESERVED [\[\]|]
   yylval->num = atoi(yytext);
   return NUMBER;
 }
-{SYMCHARS}({SYMCHARS}|{DIGIT})*  {
+
+{INITIAL}{SUBSEQ}*|\+|\-|\.\.\.  {
   yylval->str = strdup(yytext);
   return SYMBOL;
 }
@@ -33,6 +38,7 @@ RESERVED [\[\]|]
 ` { return QUASIQUOTE; }
 , { return UNQUOTE; }
 ,@ { return UNQUOTE_SPLICING; }
+\. { return DOT; }
 
 [ \t]                            /* ignore whitespace */
 ;.*                              /* ignore comments */

@@ -37,6 +37,7 @@ init_primitive_procs()
   DEF_PRIM("eqv?", eqv_p, 2);
   DEF_PRIM("object-type", object_type, 1);
   DEF_PRIM("reverse", reverse_list, 1);
+  DEF_PRIM("last-pair", last_pair, 1);
   DEF_PRIM("eval", eval, 2);
   DEF_PRIM("the-global-environment", the_global_environment, 0);
   DEF_PRIM("display", print_obj, 1);
@@ -108,6 +109,21 @@ reverse_list(struct object *lst)
   }
 
   return ret;
+}
+
+struct object*
+last_pair(struct object *pair)
+{
+  if (pair->type->code != PAIR_TYPE) {
+    printf("Argument 1 to last-pair is not a pair\n");
+    exit(1);
+  }
+
+  struct object *next = pair;
+  while (cdr(next)->type->code == PAIR_TYPE) {
+    next = cdr(next);
+  }
+  return next;
 }
 
 struct object*

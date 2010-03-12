@@ -10,6 +10,7 @@ struct object *cdr(const struct object *pair);
 struct object *set_car(struct object *pair, struct object *val);
 struct object *set_cdr(struct object *pair, struct object *val);
 struct object *reverse_list(struct object *lst);
+struct object *last_pair(struct object *pair);
 struct object *list_length(struct object *lst);
 struct object *plus(struct object *n1, struct object *n2);
 struct object *minus(struct object *n1, struct object *n2);
