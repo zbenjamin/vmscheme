@@ -77,18 +77,18 @@ eval_instruction(struct instruction **pc, struct stack *stk,
     exit(1);
     break;
   case PUSH:
-    printf("PUSH instruction\n");
+    /* printf("PUSH instruction\n"); */
     push_stack(stk, (*pc)->arg);
     (*pc)++;
     break;
   case POP:
-    printf("POP instruction\n");
+    /* printf("POP instruction\n"); */
     value = pop_stack(stk);
     DEC_REF(value);
     (*pc)++;
     break;
   case LOOKUP:
-    printf("LOOKUP instruction\n");
+    /* printf("LOOKUP instruction\n"); */
     value = env_lookup(*env, (*pc)->arg->sval);
     if (! value) {
       printf("Unbound name: %s\n", (*pc)->arg->sval);
@@ -98,14 +98,14 @@ eval_instruction(struct instruction **pc, struct stack *stk,
     (*pc)++;
     break;
   case CALL:
-    printf("CALL instruction @ %p\n", *pc);
+    /* printf("CALL instruction @ %p\n", *pc); */
     eval_call(pc, stk, env);
     break;
   case RET:
     value = pop_stack(stk);
     struct object *orig_env = pop_stack(stk);
     struct object *retaddr = pop_stack(stk);
-    printf("RET instruction @ %p to %p\n", *pc, retaddr->cval);
+    /* printf("RET instruction @ %p to %p\n", *pc, retaddr->cval); */
     push_stack(stk, value);
     *env = orig_env;
     *pc = retaddr->cval;
@@ -114,21 +114,21 @@ eval_instruction(struct instruction **pc, struct stack *stk,
     }
     break;
   case DEFINE:
-    printf("DEFINE instruction\n");
+    /* printf("DEFINE instruction\n"); */
     value = pop_stack(stk);
     env_define(*env, (*pc)->arg->sval, value);
     (*pc)++;
     break;
   case LAMBDA:
-    printf("LAMBDA instruction\n");
-    struct object *templ = (*pc)->arg;
-    push_stack(stk, make_procedure(templ->proc_val->params,
-                                   templ->proc_val->code,
+    /* printf("LAMBDA instruction\n"); */
+    value = (*pc)->arg;
+    push_stack(stk, make_procedure(value->proc_val->params,
+                                   value->proc_val->code,
                                    *env));
     (*pc)++;
     break;
   case IF:
-    printf("IF instruction\n");
+    /* printf("IF instruction\n"); */
     eval_if(pc, stk, env);
     break;
   default:
