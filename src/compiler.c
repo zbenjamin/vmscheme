@@ -106,6 +106,10 @@ compile_elem(struct object *obj, struct instruction **pc)
       if (! elem) {
         return;
       }
+      break;
+    default:
+      printf("Don't know how to compile a '%s'\n", elem->type->name);
+      exit(1);
     }
   }
 }
