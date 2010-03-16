@@ -92,6 +92,8 @@ compile_elem(struct object *obj, struct instruction **pc)
     case BOOLEAN_TYPE:
     case INTEGER_TYPE:
     case STRING_TYPE:
+    case PROCEDURE_TYPE:
+    case PRIMITIVE_PROC_TYPE:
       (*pc)->op = PUSH;
       (*pc)->arg = elem;
       ++(*pc);
