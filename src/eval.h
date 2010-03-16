@@ -17,5 +17,7 @@ struct object *eval_sequence(struct object *forms,
                              struct object *env);
 struct object *apply(struct object *func, struct object *args,
                      struct vm_context *ctx);
+struct object *apply_and_run(struct object *func, struct object *args,
+                             struct vm_context *ctx);
 
 #endif // VMSCHEME_EVAL_H

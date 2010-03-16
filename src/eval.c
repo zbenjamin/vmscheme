@@ -206,10 +206,18 @@ apply(struct object *func, struct object *args,
   }
 
   if (func->type->code == PROCEDURE_TYPE) {
-    // push the return value onto the stack.  We don't want the
-    // return addr garbage collected.
-    struct object *retaddr = make_code(ctx->pc + 1);
-    retaddr->refcount = -1;
+    // Push the return value onto the stack.  We don't want the
+    // return addr garbage collected.  Also account for the case that
+    // we were called from apply_and_run (and thus the pc might be
+    // zero).
+    struct object *retaddr;
+    if (ctx->pc) {
+      retaddr = make_code(ctx->pc + 1);
+      retaddr->refcount = -1;
+    } else {
+      retaddr = make_code(NULL);
+      retaddr->refcount = -1;
+    }
 
     push_stack(ctx->stk, retaddr);
     push_stack(ctx->stk, ctx->env);
@@ -303,4 +311,18 @@ primitive_apply2(struct object *func, struct object *args,
                                    struct object*)) rec->func;
     return function(arg1, arg2);
   }
+}
+
+struct object *
+apply_and_run(struct object *func, struct object *args,
+              struct vm_context *ctx)
+{
+  struct object *result;
+  result = apply(func, args, ctx);
+  if (result) {
+    return result;
+  }
+  eval_instructions(ctx);
+  result = pop_stack(ctx->stk);
+  return result;
 }

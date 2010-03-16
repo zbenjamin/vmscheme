@@ -1,11 +1,14 @@
 #include <compiler.h>
 
+#include <eval.h>
 #include <instruction.h>
 #include <object.h>
 #include <type.h>
+#include <parser_aux.h>
 #include <primitive_procedures.h>
 #include <utils.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,8 +18,26 @@ static void compile_list(struct object *exprs,
                          struct instruction **pc);
 static void compile_elem(struct object *exprs,
                          struct instruction **pc);
-static void compile_comb(struct object *exprs,
-                         struct instruction **pc);
+static struct object *compile_comb(struct object *exprs,
+                                   struct instruction **pc);
+
+static struct vm_context compiler_ctx;
+static int compiler_initialized;
+static struct object *transform_quasiquote;
+
+void
+init_compiler()
+{
+  compiler_initialized = 0;
+  compiler_ctx.stk = make_stack(1024);
+  compiler_ctx.env = make_environment(global_env);
+  compiler_ctx.pc = NULL;
+  eval_sequence(parse_file("quasiquote.scm"),
+                compiler_ctx.env);
+  transform_quasiquote = env_lookup(compiler_ctx.env,
+                                    "transform-quasiquote");
+  compiler_initialized = 1;
+}
 
 struct instruction*
 compile(struct object *exprs)
@@ -64,37 +85,58 @@ compile_list(struct object *exprs, struct instruction **pc)
 void
 compile_elem(struct object *obj, struct instruction **pc)
 {
-  switch (obj->type->code) {
-  case NIL_TYPE:
-  case BOOLEAN_TYPE:
-  case INTEGER_TYPE:
-  case STRING_TYPE:
-    (*pc)->op = PUSH;
-    (*pc)->arg = obj;
-    ++(*pc);
-    break;
-  case SYMBOL_TYPE:
-    (*pc)->op = LOOKUP;
-    (*pc)->arg = obj;
-    ++(*pc);
-    break;
-  case PAIR_TYPE:
-    compile_comb(obj, pc);
-    break;
+  struct object *elem = obj;
+  while (1) {
+    switch (elem->type->code) {
+    case NIL_TYPE:
+    case BOOLEAN_TYPE:
+    case INTEGER_TYPE:
+    case STRING_TYPE:
+      (*pc)->op = PUSH;
+      (*pc)->arg = elem;
+      ++(*pc);
+      return;
+    case SYMBOL_TYPE:
+      (*pc)->op = LOOKUP;
+      (*pc)->arg = elem;
+      ++(*pc);
+      return;
+    case PAIR_TYPE:
+      elem = compile_comb(elem, pc);
+      if (! elem) {
+        return;
+      }
+    }
   }
 }
 
-void
+// returns a replacement object that should be compiled instead or
+// NULL if the compilation of the passed combination is done
+struct object *
 compile_comb(struct object *lst, struct instruction **pc)
 {
   struct object *first = car(lst);
+
+  if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "quasiquote") == 0) {
+    if (compiler_initialized == 0) {
+      printf("Internal error: cannot use advanced compiler "
+             "features before compiler is fully initialized\n");
+      exit(1);
+    }
+    lst = make_pair(lst, NIL);
+    struct object *result;
+    result = apply_and_run(transform_quasiquote, lst, &compiler_ctx);
+    DEC_REF(lst);
+    return result;
+  }
 
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "quote") == 0) {
     (*pc)->op = PUSH;
     (*pc)->arg = car(cdr(lst));
     ++(*pc);
-    return;
+    return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "define") == 0) {
@@ -106,7 +148,7 @@ compile_comb(struct object *lst, struct instruction **pc)
     (*pc)->op = PUSH;
     (*pc)->arg = NIL;
     ++(*pc);
-    return;
+    return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "lambda") == 0) {
@@ -118,7 +160,7 @@ compile_comb(struct object *lst, struct instruction **pc)
     (*pc)->op = LAMBDA;
     (*pc)->arg = template;
     ++(*pc);
-    return;
+    return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "if") == 0) {
@@ -142,7 +184,7 @@ compile_comb(struct object *lst, struct instruction **pc)
     compile_list(make_pair(car(cdr(lst)), NIL), pc);
     (*pc)->op = IF;
     ++(*pc);
-    return;
+    return NULL;
   }
 
   // a regular function invocation
@@ -153,4 +195,5 @@ compile_comb(struct object *lst, struct instruction **pc)
   ++(*pc);
   (*pc)->op = CALL;
   ++(*pc);
+  return NULL;
 }
