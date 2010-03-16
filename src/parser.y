@@ -16,6 +16,7 @@
 %token <num> RP
 %token <num> NUMBER
 %token <str> SYMBOL
+%token <str> STRING
 %token <num> BOOL_TRUE
 %token <num> BOOL_FALSE
 %token <num> QUOTE
@@ -61,6 +62,7 @@ prog: /* empty */ { *parse_result = NULL; }
 
 expr: NUMBER { $$ = make_integer($1); }
     | SYMBOL { $$ = make_symbol($1); }
+    | STRING { $$ = make_string($1); }
     | BOOL_TRUE { $$ = TRUE; }
     | BOOL_FALSE { $$ = FALSE; }
     | QUOTE expr { $$ = make_pair(make_symbol("quote"),

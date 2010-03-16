@@ -32,6 +32,12 @@ RESERVED [\[\]|]
   return SYMBOL;
 }
 
+\"([^\"\\\n]|(\\['\"?\\abfnrtv]))*\"  {
+  /* strip off the start and end double quotes */
+  yylval->str = strndup(yytext + 1, strlen(yytext) - 2);
+  return STRING;
+}
+
 #t { return BOOL_TRUE; }
 #f { return BOOL_FALSE; }
 ' { return QUOTE; }
