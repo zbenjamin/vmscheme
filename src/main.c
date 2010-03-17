@@ -21,26 +21,15 @@ main(int argc, char* argv[])
   init_compiler();
 
   eval_sequence(parse_file("prelude.scm"), global_env);
-  eval_sequence(parse_file("quasiquote.scm"), global_env);
-  struct object *user_env = make_environment(global_env);
 
-  while (1) {
-    printf("> ");
-    struct object *input = parse_interactive();
-    if (input == NULL) {
-      break;
-    }
-    print_obj(input);
-    printf("\n");
+  struct vm_context repl_ctx;
+  repl_ctx.stk = make_stack(1024);
+  repl_ctx.env = make_environment(global_env);
+  repl_ctx.pc = NULL;
 
-    struct object *value;
-    value = eval_sequence(input, user_env);
-    print_obj(value);
-    printf("\n");
-    DEC_REF(value);
+  struct object *repl = env_lookup(global_env, "initial-repl");
+  apply_and_run(repl, NIL, &repl_ctx);
 
-    DEC_REF(input);
-  }
   return 0;
 }
 

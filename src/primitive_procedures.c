@@ -3,6 +3,7 @@
 #include <environment.h>
 #include <eval.h>
 #include <object.h>
+#include <parser_aux.h>
 #include <type.h>
 #include <utils.h>
 
@@ -41,7 +42,8 @@ init_primitive_procs()
   DEF_PRIM("eval", eval, 2, 0);
   DEF_PRIM("apply", apply, 2, 1);
   DEF_PRIM("the-global-environment", the_global_environment, 0, 0);
-  DEF_PRIM("display", print_obj, 1, 0);
+  DEF_PRIM("display", display, 1, 0);
+  DEF_PRIM("read", parse_interactive, 0, 0);
 }
 
 struct object*
@@ -246,4 +248,15 @@ struct object*
 object_type(struct object *obj)
 {
   return make_integer(obj->type->code);
+}
+
+struct object*
+display(struct object *obj)
+{
+  if (obj->type->code == STRING_TYPE) {
+    printf("%s", obj->sval);
+  } else {
+    print_obj(obj);
+  }
+  return NIL;
 }

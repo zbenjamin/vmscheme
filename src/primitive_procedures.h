@@ -20,5 +20,6 @@ struct object *iequal(struct object *n1, struct object *n2);
 struct object *eq_p(struct object *o1, struct object *o2);
 struct object *eqv_p(struct object *o1, struct object *o2);
 struct object *object_type(struct object *obj);
+struct object *display(struct object *obj);
 
 #endif // VMSCHEME_PRIMITIVE_PROCEDURES_H
