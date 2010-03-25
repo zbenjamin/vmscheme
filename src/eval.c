@@ -25,6 +25,7 @@ static struct object *primitive_apply2(struct object *func,
                                        struct vm_context *ctx);
 
 
+// see note for eval_sequence, below
 struct object *
 eval(struct object *form, struct object *env)
 {
@@ -34,6 +35,12 @@ eval(struct object *form, struct object *env)
   return ret;
 }
 
+// eval_sequence may return an object with a refcount of zero.
+// This is because it's the interface to the interpreter and so the
+// return value may be the result of a computation that only has
+// one reference inside the created vm context.  On the other hand
+// it may return an object with multiple references (if the object
+// returned is referenced in the passed environment, for example).
 struct object *
 eval_sequence(struct object *forms, struct object *env)
 {
@@ -47,6 +54,13 @@ eval_sequence(struct object *forms, struct object *env)
 
   eval_instructions(&ctx);
   struct object *value = pop_stack(stk);
+
+  // decrement the refcount if it's positive, but don't deallocate
+  // the object
+  if (value->refcount > 0) {
+    --(value->refcount);
+  }
+
   dealloc_bytecode(prog);
   assert(stack_empty(stk));
   dealloc_stack(stk);
@@ -164,17 +178,22 @@ eval_call(struct vm_context *ctx)
   struct object *func = pop_stack(ctx->stk);
   struct object *result;
   result = apply(func, args, ctx);
-  if (args != NIL) {
-    dealloc_obj(args);
-  }
-  DEC_REF(func);
+
   // we get a result back for primitive functions, but compound
   // functions muck with the vm context instead
   if (result != NULL) {
     ++ctx->pc;
     push_stack(ctx->stk, result);
+    // need to increment the refcount of the result before
+    // deallocating the arguments in case the function returns some
+    // bit of the arguments (like car or cdr)
     INC_REF(result);
   }
+
+  if (args != NIL) {
+    dealloc_obj(args);
+  }
+  DEC_REF(func);
 }
 
 void

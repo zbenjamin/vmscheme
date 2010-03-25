@@ -33,6 +33,8 @@ init_compiler()
   compiler_ctx.env = make_environment(global_env);
   compiler_ctx.pc = NULL;
   struct object *forms = parse_file("quasiquote.scm");
+  // shouldn't need to deallocate the return value of eval_sequence
+  // because it should be '()
   eval_sequence(forms,
                 compiler_ctx.env);
   dealloc_obj(forms);
@@ -137,7 +139,7 @@ compile_comb(struct object *lst, struct instruction **pc)
     lst = make_pair(lst, NIL);
     struct object *result;
     result = apply_and_run(transform_quasiquote, lst, &compiler_ctx);
-    DEC_REF(lst);
+    dealloc_obj(lst);
     return result;
   }
 
