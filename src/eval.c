@@ -30,7 +30,7 @@ eval(struct object *form, struct object *env)
 {
   struct object *seq = make_pair(form, NIL);
   struct object *ret = eval_sequence(seq, env);
-  DEC_REF(seq);
+  dealloc_obj(seq);
   return ret;
 }
 
@@ -40,10 +40,9 @@ eval_sequence(struct object *forms, struct object *env)
   struct instruction *prog = compile(forms);
   struct stack *stk = make_stack(1024);
   // push magic "end of instructions" return address
-  struct object *end_marker = make_code(NULL);
-  end_marker->refcount = -1;
-  push_stack(stk, end_marker);
+  push_stack(stk, NULL);
   push_stack(stk, env);
+  INC_REF(env);
   struct vm_context ctx = { prog, stk, env };
 
   eval_instructions(&ctx);
@@ -73,6 +72,7 @@ eval_instruction(struct vm_context *ctx)
   case PUSH:
     /* printf("PUSH instruction\n"); */
     push_stack(ctx->stk, ctx->pc->arg);
+    INC_REF(ctx->pc->arg);
     ++ctx->pc;
     break;
   case POP:
@@ -89,6 +89,7 @@ eval_instruction(struct vm_context *ctx)
       exit(1);
     }
     push_stack(ctx->stk, value);
+    INC_REF(value);
     ++ctx->pc;
     break;
   case CALL:
@@ -98,27 +99,34 @@ eval_instruction(struct vm_context *ctx)
   case RET:
     value = pop_stack(ctx->stk);
     struct object *orig_env = pop_stack(ctx->stk);
+    DEC_REF(orig_env);
     struct object *retaddr = pop_stack(ctx->stk);
     /* printf("RET instruction @ %p to %p\n", *pc, retaddr->cval); */
     push_stack(ctx->stk, value);
+    DEC_REF(ctx->env);
     ctx->env = orig_env;
-    ctx->pc = retaddr->cval;
-    if (ctx->pc == NULL) {
+    if (retaddr == NULL) {
+      ctx->pc = 0;
       return 1;
     }
+    ctx->pc = retaddr->cval;
+    free(retaddr);
     break;
   case DEFINE:
     /* printf("DEFINE instruction\n"); */
     value = pop_stack(ctx->stk);
     env_define(ctx->env, ctx->pc->arg->sval, value);
+    DEC_REF(value);
     ++ctx->pc;
     break;
   case LAMBDA:
     /* printf("LAMBDA instruction\n"); */
     value = ctx->pc->arg;
-    push_stack(ctx->stk, make_procedure(value->proc_val->params,
-                                        value->proc_val->code,
-                                        ctx->env));
+    struct object *proc = make_procedure(value->proc_val->params,
+                                         value->proc_val->code,
+                                         ctx->env);
+    push_stack(ctx->stk, proc);
+    INC_REF(proc);
     ++ctx->pc;
     break;
   case IF:
@@ -145,19 +153,27 @@ eval_call(struct vm_context *ctx)
   }
 
   int num = num_args->ival;
+  DEC_REF(num_args);
   while (num) {
-    args = make_pair(pop_stack(ctx->stk), args);
+    struct object *arg = pop_stack(ctx->stk);
+    args = make_pair(arg, args);
+    DEC_REF(arg);
     --num;
   }
 
   struct object *func = pop_stack(ctx->stk);
   struct object *result;
   result = apply(func, args, ctx);
+  if (args != NIL) {
+    dealloc_obj(args);
+  }
+  DEC_REF(func);
   // we get a result back for primitive functions, but compound
   // functions muck with the vm context instead
   if (result != NULL) {
     ++ctx->pc;
     push_stack(ctx->stk, result);
+    INC_REF(result);
   }
 }
 
@@ -171,12 +187,16 @@ eval_if(struct vm_context *ctx)
   struct object *action;
   if (testval == FALSE) {
     action = alt;
+    DEC_REF(conseq);
   } else {
     action = conseq;
+    DEC_REF(alt);
   }
 
+  struct object *zero = make_integer(0);
   push_stack(ctx->stk, action);
-  push_stack(ctx->stk, make_integer(0));
+  push_stack(ctx->stk, zero);
+  INC_REF(zero);
   eval_call(ctx);
 }
 
@@ -211,22 +231,28 @@ apply(struct object *func, struct object *args,
     // we were called from apply_and_run (and thus the pc might be
     // zero).
     struct object *retaddr;
-    if (ctx->pc) {
+    if (! ctx->pc) {
+      retaddr = NULL;
+      push_stack(ctx->stk, retaddr);
+      push_stack(ctx->stk, ctx->env);
+      INC_REF(ctx->env);
+    } else if (ctx->pc->op == CALL || ctx->pc->op == IF) {
       retaddr = make_code(ctx->pc + 1);
       retaddr->refcount = -1;
+      push_stack(ctx->stk, retaddr);
+      push_stack(ctx->stk, ctx->env);
+      INC_REF(ctx->env);
     } else {
       retaddr = make_code(NULL);
       retaddr->refcount = -1;
     }
-
-    push_stack(ctx->stk, retaddr);
-    push_stack(ctx->stk, ctx->env);
 
     struct object *new_env;
     new_env = make_environment(func->proc_val->env);
     env_bind_names(new_env, func->proc_val->params, args);
     ctx->pc = func->proc_val->code->cval;
     ctx->env = new_env;
+    INC_REF(new_env);
     return NULL;
   }
 

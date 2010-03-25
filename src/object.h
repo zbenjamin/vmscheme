@@ -8,7 +8,7 @@ struct object {
   struct type *type;
   union {
     int ival;
-    const char *sval;
+    char *sval;
     struct object **pval;
     struct proc_rec *proc_val;
     struct primitive_proc_rec *pproc_val;
@@ -51,8 +51,8 @@ extern struct object *FALSE;
 void init_singleton_objects();
 
 struct object* make_integer(int x);
-struct object* make_string(const char *str);
-struct object* make_symbol(const char *str);
+struct object* make_string(char *str);
+struct object* make_symbol(char *str);
 struct object* make_pair(struct object *car,
                          struct object *cdr);
 struct object* make_procedure(struct object *params,

@@ -2,6 +2,7 @@
 #include <environment.h>
 #include <primitive_procedures.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -13,6 +14,7 @@ struct object *FALSE;
 void
 _maybe_dealloc_obj(struct object *obj)
 {
+  assert(obj->refcount != 0);
   if (obj->refcount > 0) {
     --(obj->refcount);
     if (obj->refcount == 0) {
@@ -24,6 +26,7 @@ _maybe_dealloc_obj(struct object *obj)
 void
 dealloc_obj(struct object *obj)
 {
+  assert(obj->refcount == 0);
   struct object *ocar;
   struct object *ocdr;
 
@@ -36,24 +39,40 @@ dealloc_obj(struct object *obj)
     printf("%p %p\n", ocar, ocdr);
     DEC_REF(ocar);
     DEC_REF(ocdr);
+    free(obj->pval);
     break;
   case INTEGER_TYPE:
     printf("%d\n", obj->ival);
     break;
   case STRING_TYPE:
     printf("%s\n", obj->sval);
+    free(obj->sval);
     break;
   case SYMBOL_TYPE:
     printf("%s\n", obj->sval);
+    free(obj->sval);
     break;
   case PROCEDURE_TYPE:
     printf("%p %p %p\n", obj->proc_val->params, obj->proc_val->code,
            obj->proc_val->env);
     DEC_REF(obj->proc_val->params);
     DEC_REF(obj->proc_val->code);
+    if (obj->proc_val->env) {
+      DEC_REF(obj->proc_val->env);
+    }
+    free(obj->proc_val);
     break;
   case PRIMITIVE_PROC_TYPE:
     printf("%s\n", obj->pproc_val->name);
+    free(obj->pproc_val);
+    break;
+  case CODE_TYPE:
+    printf("\n");
+    dealloc_bytecode(obj->cval);
+    break;
+  case ENVIRONMENT_TYPE:
+    printf("%p\n", obj->eval->parent);
+    dealloc_env(obj);
     break;
   default:
     printf("don't know how to deallocate a %s\n", obj->type->name);
@@ -82,27 +101,27 @@ make_integer(int x)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(INTEGER_TYPE);
   ret->ival = x;
-  ret->refcount = 1;
+  ret->refcount = 0;
   return ret;
 }
 
 struct object*
-make_string(const char *str)
+make_string(char *str)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(STRING_TYPE);
   ret->sval = str;
-  ret->refcount = 1;
+  ret->refcount = 0;
   return ret;
 }
 
 struct object*
-make_symbol(const char *str)
+make_symbol(char *str)
 {
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(SYMBOL_TYPE);
   ret->sval = str;
-  ret->refcount = 1;
+  ret->refcount = 0;
   return ret;
 }
 
@@ -114,7 +133,7 @@ make_pair(struct object *car, struct object *cdr)
   ret->pval = malloc(sizeof(struct object*) * 2);
   ret->pval[0] = car;
   ret->pval[1] = cdr;
-  ret->refcount = 1;
+  ret->refcount = 0;
   INC_REF(car);
   INC_REF(cdr);
   return ret;
@@ -132,9 +151,12 @@ make_procedure(struct object *params,
   rec->code = code;
   rec->env = env;
   ret->proc_val = rec;
-  ret->refcount = 1;
+  ret->refcount = 0;
   INC_REF(params);
   INC_REF(code);
+  if (env) {
+    INC_REF(env);
+  }
   return ret;
 }
 
@@ -153,7 +175,7 @@ make_primitive_procedure(void *func,
   rec->name = name;
   rec->takes_ctx = takes_ctx;
   ret->pproc_val = rec;
-  ret->refcount = 1;
+  ret->refcount = 0;
   return ret;
 }
 
@@ -163,7 +185,7 @@ make_code(struct instruction *code)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(CODE_TYPE);
   ret->cval = code;
-  ret->refcount = 1;
+  ret->refcount = 0;
   return ret;
 }
 
@@ -178,7 +200,10 @@ make_environment(struct object *parent)
   env->size = 0;
   env->parent = parent;
   ret->eval = env;
-  ret->refcount = 1;
+  ret->refcount = 0;
+  if (parent) {
+    INC_REF(parent);
+  }
   return ret;
 }
 

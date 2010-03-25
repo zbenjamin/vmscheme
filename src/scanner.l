@@ -132,6 +132,7 @@ reset_scanner()
   static int init_once_done = 0;
   if (! init_once_done) {
     init_once();
+    init_once_done = 1;
   }
 
   BEGIN(0);

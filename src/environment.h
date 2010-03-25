@@ -2,7 +2,7 @@
 #define VMSCHEME_ENVIRONMENT_H
 
 struct environment {
-  const char **names;
+  char **names;
   struct object **values;
   unsigned int size;
   struct object *parent;
@@ -10,6 +10,7 @@ struct environment {
 
 void init_global_env();
 
+void dealloc_env(struct object *env);
 void env_define(struct object *env, const char *name,
                 struct object *val);
 struct object* env_lookup(struct object *env, const char *name);

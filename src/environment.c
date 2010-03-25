@@ -18,6 +18,20 @@ init_global_env()
 }
 
 void
+dealloc_env(struct object *env)
+{
+  int i;
+  for (i = 0; i < env->eval->size; ++i) {
+    free(env->eval->names[i]);
+    DEC_REF(env->eval->values[i]);
+  }
+  free(env->eval->names);
+  free(env->eval->values);
+  DEC_REF(env->eval->parent);
+  free(env->eval);
+}
+
+void
 env_define(struct object *env, const char *name,
            struct object *val)
 {
@@ -29,15 +43,15 @@ env_define(struct object *env, const char *name,
     return;
   }
 
-  const char **names;
+  char **names;
   struct object **values;
-  names = malloc(sizeof(const char*) * (env->eval->size + 1));
+  names = malloc(sizeof(char*) * (env->eval->size + 1));
   values = malloc(sizeof(struct object*) * (env->eval->size + 1));
   memcpy(names, env->eval->names,
-         sizeof(const char*) * env->eval->size);
+         sizeof(char*) * env->eval->size);
   memcpy(values, env->eval->values,
          sizeof(struct object*) * env->eval->size);
-  names[env->eval->size] = name;
+  names[env->eval->size] = strdup(name);
   values[env->eval->size] = val;
   free(env->eval->names);
   free(env->eval->values);

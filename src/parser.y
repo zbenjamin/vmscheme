@@ -2,6 +2,7 @@
 %define api.pure
 
 %{
+#include <string.h>
 #include <object.h>
 #include <primitive_procedures.h>
 %}
@@ -57,7 +58,7 @@ void yyerror(yyscan_t scanner, struct object** parse_result,
 %%
 
 prog: /* empty */ { *parse_result = NULL; }
-    | exprseq { *parse_result = reverse_list($$); }
+    | exprseq { *parse_result = reverse_list($$); dealloc_obj($$); }
   ;
 
 expr: NUMBER { $$ = make_integer($1); }
@@ -65,18 +66,20 @@ expr: NUMBER { $$ = make_integer($1); }
     | STRING { $$ = make_string($1); }
     | BOOL_TRUE { $$ = TRUE; }
     | BOOL_FALSE { $$ = FALSE; }
-    | QUOTE expr { $$ = make_pair(make_symbol("quote"),
+    | QUOTE expr { $$ = make_pair(make_symbol(strdup("quote")),
                                   make_pair($2, NIL)); }
-    | QUASIQUOTE expr { $$ = make_pair(make_symbol("quasiquote"),
-                                       make_pair($2, NIL)); }
-    | UNQUOTE expr { $$ = make_pair(make_symbol("unquote"),
+    | QUASIQUOTE expr
+      { $$ = make_pair(make_symbol(strdup("quasiquote")),
+                       make_pair($2, NIL)); }
+    | UNQUOTE expr { $$ = make_pair(make_symbol(strdup("unquote")),
                                     make_pair($2, NIL)); }
     | UNQUOTE_SPLICING expr
-      { $$ = make_pair(make_symbol("unquote-splicing"),
-                                             make_pair($2, NIL)); }
-    | LP exprseq RP { $$ = reverse_list($2); }
+      { $$ = make_pair(make_symbol(strdup("unquote-splicing")),
+                       make_pair($2, NIL)); }
+    | LP exprseq RP { $$ = reverse_list($2); dealloc_obj($2); }
     | LP exprseq DOT expr RP
       { $$ = reverse_list($2);
+        dealloc_obj($2);
         set_cdr(last_pair($$), $4); }
     | LP RP { $$ = NIL; }
   ;

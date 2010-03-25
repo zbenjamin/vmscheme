@@ -32,8 +32,10 @@ init_compiler()
   compiler_ctx.stk = make_stack(1024);
   compiler_ctx.env = make_environment(global_env);
   compiler_ctx.pc = NULL;
-  eval_sequence(parse_file("quasiquote.scm"),
+  struct object *forms = parse_file("quasiquote.scm");
+  eval_sequence(forms,
                 compiler_ctx.env);
+  dealloc_obj(forms);
   transform_quasiquote = env_lookup(compiler_ctx.env,
                                     "transform-quasiquote");
   compiler_initialized = 1;
@@ -95,11 +97,13 @@ compile_elem(struct object *obj, struct instruction **pc)
     case PROCEDURE_TYPE:
     case PRIMITIVE_PROC_TYPE:
       (*pc)->op = PUSH;
+      INC_REF(elem);
       (*pc)->arg = elem;
       ++(*pc);
       return;
     case SYMBOL_TYPE:
       (*pc)->op = LOOKUP;
+      INC_REF(elem);
       (*pc)->arg = elem;
       ++(*pc);
       return;
@@ -140,7 +144,9 @@ compile_comb(struct object *lst, struct instruction **pc)
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "quote") == 0) {
     (*pc)->op = PUSH;
-    (*pc)->arg = car(cdr(lst));
+    struct object *datum = car(cdr(lst));
+    INC_REF(datum);
+    (*pc)->arg = datum;
     ++(*pc);
     return NULL;
   }
@@ -149,7 +155,9 @@ compile_comb(struct object *lst, struct instruction **pc)
     // a definition
     compile_list(cdr(cdr(lst)), pc);
     (*pc)->op = DEFINE;
-    (*pc)->arg = car(cdr(lst));
+    struct object *name = car(cdr(lst));
+    INC_REF(name);
+    (*pc)->arg = name;
     ++(*pc);
     (*pc)->op = PUSH;
     (*pc)->arg = NIL;
@@ -163,6 +171,7 @@ compile_comb(struct object *lst, struct instruction **pc)
     template = make_procedure(car(cdr(lst)),
                               make_code(compile(cdr(cdr(lst)))),
                               NULL);
+    INC_REF(template);
     (*pc)->op = LAMBDA;
     (*pc)->arg = template;
     ++(*pc);
@@ -176,18 +185,24 @@ compile_comb(struct object *lst, struct instruction **pc)
     conseq = make_procedure(NIL,
                             make_code(compile(conseq_code)),
                             NULL);
+    INC_REF(conseq);
+    dealloc_obj(conseq_code);
     struct object *alt;
     struct object *alt_code = make_pair(car(cdr(cdr(cdr(lst)))), NIL);
     alt = make_procedure(NIL,
                          make_code(compile(alt_code)),
                          NULL);
+    INC_REF(alt);
+    dealloc_obj(alt_code);
     (*pc)->op = LAMBDA;
     (*pc)->arg = conseq;
     ++(*pc);
     (*pc)->op = LAMBDA;
     (*pc)->arg = alt;
     ++(*pc);
-    compile_list(make_pair(car(cdr(lst)), NIL), pc);
+    struct object *test = make_pair(car(cdr(lst)), NIL);
+    compile_list(test, pc);
+    dealloc_obj(test);
     (*pc)->op = IF;
     ++(*pc);
     return NULL;
@@ -195,9 +210,11 @@ compile_comb(struct object *lst, struct instruction **pc)
 
   // a regular function invocation
   int nargs = list_length_int(lst) - 1;
+  struct object *obj_nargs = make_integer(nargs);
+  INC_REF(obj_nargs);
   compile_list(lst, pc);
   (*pc)->op = PUSH;
-  (*pc)->arg = make_integer(nargs);
+  (*pc)->arg = obj_nargs;
   ++(*pc);
   (*pc)->op = CALL;
   ++(*pc);
