@@ -30,31 +30,31 @@ dealloc_obj(struct object *obj)
   struct object *ocar;
   struct object *ocdr;
 
-  printf("deallocating %s obj %p: ", obj->type->name, obj);
+  /* printf("deallocating %s obj %p: ", obj->type->name, obj); */
 
   switch (obj->type->code) {
   case PAIR_TYPE:
     ocar = car(obj);
     ocdr = cdr(obj);
-    printf("%p %p\n", ocar, ocdr);
+    /* printf("%p %p\n", ocar, ocdr); */
     DEC_REF(ocar);
     DEC_REF(ocdr);
     free(obj->pval);
     break;
   case INTEGER_TYPE:
-    printf("%d\n", obj->ival);
+    /* printf("%d\n", obj->ival); */
     break;
   case STRING_TYPE:
-    printf("%s\n", obj->sval);
+    /* printf("%s\n", obj->sval); */
     free(obj->sval);
     break;
   case SYMBOL_TYPE:
-    printf("%s\n", obj->sval);
+    /* printf("%s\n", obj->sval); */
     free(obj->sval);
     break;
   case PROCEDURE_TYPE:
-    printf("%p %p %p\n", obj->proc_val->params, obj->proc_val->code,
-           obj->proc_val->env);
+    /* printf("%p %p %p\n", obj->proc_val->params, obj->proc_val->code, */
+    /*        obj->proc_val->env); */
     DEC_REF(obj->proc_val->params);
     DEC_REF(obj->proc_val->code);
     if (obj->proc_val->env) {
@@ -63,15 +63,15 @@ dealloc_obj(struct object *obj)
     free(obj->proc_val);
     break;
   case PRIMITIVE_PROC_TYPE:
-    printf("%s\n", obj->pproc_val->name);
+    /* printf("%s\n", obj->pproc_val->name); */
     free(obj->pproc_val);
     break;
   case CODE_TYPE:
-    printf("\n");
+    /* printf("\n"); */
     dealloc_bytecode(obj->cval);
     break;
   case ENVIRONMENT_TYPE:
-    printf("%p\n", obj->eval->parent);
+    /* printf("%p\n", obj->eval->parent); */
     dealloc_env(obj);
     break;
   default:
