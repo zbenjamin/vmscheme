@@ -21,10 +21,11 @@ main(int argc, char* argv[])
   init_compiler();
 
   struct object *forms = parse_file("prelude.scm");
-  // shouldn't need to deallocate the return value because it should
-  // be '()
-  eval_sequence(forms, global_env);
+  struct object *value = eval_sequence(forms, global_env);
+  // ensures we don't double-free the return value
+  INC_REF(value);
   dealloc_obj(forms);
+  DEC_REF(value);
 
   struct vm_context repl_ctx;
   repl_ctx.stk = make_stack(1024);

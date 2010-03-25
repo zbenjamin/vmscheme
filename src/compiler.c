@@ -33,11 +33,12 @@ init_compiler()
   compiler_ctx.env = make_environment(global_env);
   compiler_ctx.pc = NULL;
   struct object *forms = parse_file("quasiquote.scm");
-  // shouldn't need to deallocate the return value of eval_sequence
-  // because it should be '()
-  eval_sequence(forms,
-                compiler_ctx.env);
+  struct object *value = eval_sequence(forms,
+                                       compiler_ctx.env);
+  // ensures we don't double-free the return value
+  INC_REF(value);
   dealloc_obj(forms);
+  DEC_REF(value);
   transform_quasiquote = env_lookup(compiler_ctx.env,
                                     "transform-quasiquote");
   compiler_initialized = 1;
