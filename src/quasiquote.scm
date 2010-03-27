@@ -1,20 +1,19 @@
 (define make-cons
   (lambda (car cdr)
-    (cons 'cons (cons car (cons cdr '())))))
+    (list 'cons car cdr)))
 
 (define make-append
   (lambda (lst1 lst2)
-    (cons 'append (cons lst1 (cons lst2 '())))))
+    (list 'append lst1 lst2)))
 
 (define make-tagged-list
   (lambda (elem tag)
-    (make-cons (cons 'quote (cons tag '()))
-               (make-cons elem
-                          '()))))
+    (make-cons (list 'quote tag)
+               (make-cons elem '()))))
 
 (define do-quote
   (lambda (elem)
-    (cons 'quote (cons elem '()))))
+    (list 'quote elem)))
 
 (define make-quasiquote
   (lambda (elem)
