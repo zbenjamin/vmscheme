@@ -47,13 +47,13 @@ eval_sequence(struct object *forms, struct object *env)
   struct instruction *prog = compile(forms);
   struct stack *stk = make_stack(1024);
   // push magic "end of instructions" return address
-  push_stack(stk, NULL);
-  push_stack(stk, env);
+  stack_push(stk, NULL);
+  stack_push(stk, env);
   INC_REF(env);
   struct vm_context ctx = { prog, stk, env };
 
   eval_instructions(&ctx);
-  struct object *value = pop_stack(stk);
+  struct object *value = stack_pop(stk);
 
   // decrement the refcount if it's positive, but don't deallocate
   // the object
@@ -85,13 +85,13 @@ eval_instruction(struct vm_context *ctx)
     break;
   case PUSH:
     /* printf("PUSH instruction\n"); */
-    push_stack(ctx->stk, ctx->pc->arg);
+    stack_push(ctx->stk, ctx->pc->arg);
     INC_REF(ctx->pc->arg);
     ++ctx->pc;
     break;
   case POP:
     /* printf("POP instruction\n"); */
-    value = pop_stack(ctx->stk);
+    value = stack_pop(ctx->stk);
     DEC_REF(value);
     ++ctx->pc;
     break;
@@ -102,7 +102,7 @@ eval_instruction(struct vm_context *ctx)
       printf("Unbound name: %s\n", ctx->pc->arg->sval);
       exit(1);
     }
-    push_stack(ctx->stk, value);
+    stack_push(ctx->stk, value);
     INC_REF(value);
     ++ctx->pc;
     break;
@@ -112,12 +112,12 @@ eval_instruction(struct vm_context *ctx)
     eval_call(ctx);
     break;
   case RET:
-    value = pop_stack(ctx->stk);
-    struct object *orig_env = pop_stack(ctx->stk);
+    value = stack_pop(ctx->stk);
+    struct object *orig_env = stack_pop(ctx->stk);
     DEC_REF(orig_env);
-    struct object *retaddr = pop_stack(ctx->stk);
+    struct object *retaddr = stack_pop(ctx->stk);
     /* printf("RET instruction @ %p to %p\n", *pc, retaddr->cval); */
-    push_stack(ctx->stk, value);
+    stack_push(ctx->stk, value);
     DEC_REF(ctx->env);
     ctx->env = orig_env;
     if (retaddr == NULL) {
@@ -129,7 +129,7 @@ eval_instruction(struct vm_context *ctx)
     break;
   case DEFINE:
     /* printf("DEFINE instruction\n"); */
-    value = pop_stack(ctx->stk);
+    value = stack_pop(ctx->stk);
     env_define(ctx->env, ctx->pc->arg->sval, value);
     DEC_REF(value);
     ++ctx->pc;
@@ -140,7 +140,7 @@ eval_instruction(struct vm_context *ctx)
     struct object *proc = make_procedure(value->proc_val->params,
                                          value->proc_val->code,
                                          ctx->env);
-    push_stack(ctx->stk, proc);
+    stack_push(ctx->stk, proc);
     INC_REF(proc);
     ++ctx->pc;
     break;
@@ -160,7 +160,7 @@ eval_instruction(struct vm_context *ctx)
 void
 eval_call(struct vm_context *ctx)
 {
-  struct object *num_args = pop_stack(ctx->stk);
+  struct object *num_args = stack_pop(ctx->stk);
   struct object *args = NIL;
   if (num_args->type->code != INTEGER_TYPE) {
     printf("Internal error: number of arguments to call "
@@ -171,13 +171,13 @@ eval_call(struct vm_context *ctx)
   int num = num_args->ival;
   DEC_REF(num_args);
   while (num) {
-    struct object *arg = pop_stack(ctx->stk);
+    struct object *arg = stack_pop(ctx->stk);
     args = make_pair(arg, args);
     DEC_REF(arg);
     --num;
   }
 
-  struct object *func = pop_stack(ctx->stk);
+  struct object *func = stack_pop(ctx->stk);
   struct object *result;
   result = apply(func, args, ctx);
 
@@ -185,7 +185,7 @@ eval_call(struct vm_context *ctx)
   // functions muck with the vm context instead
   if (result != NULL) {
     ++ctx->pc;
-    push_stack(ctx->stk, result);
+    stack_push(ctx->stk, result);
     // need to increment the refcount of the result before
     // deallocating the arguments in case the function returns some
     // bit of the arguments (like car or cdr)
@@ -201,9 +201,9 @@ eval_call(struct vm_context *ctx)
 void
 eval_if(struct vm_context *ctx)
 {
-  struct object *testval = pop_stack(ctx->stk);
-  struct object *alt = pop_stack(ctx->stk);
-  struct object *conseq = pop_stack(ctx->stk);
+  struct object *testval = stack_pop(ctx->stk);
+  struct object *alt = stack_pop(ctx->stk);
+  struct object *conseq = stack_pop(ctx->stk);
 
   struct object *action;
   if (testval == FALSE) {
@@ -215,8 +215,8 @@ eval_if(struct vm_context *ctx)
   }
 
   struct object *zero = make_integer(0);
-  push_stack(ctx->stk, action);
-  push_stack(ctx->stk, zero);
+  stack_push(ctx->stk, action);
+  stack_push(ctx->stk, zero);
   INC_REF(zero);
   eval_call(ctx);
 }
@@ -254,14 +254,14 @@ apply(struct object *func, struct object *args,
     struct object *retaddr;
     if (! ctx->pc) {
       retaddr = NULL;
-      push_stack(ctx->stk, retaddr);
-      push_stack(ctx->stk, ctx->env);
+      stack_push(ctx->stk, retaddr);
+      stack_push(ctx->stk, ctx->env);
       INC_REF(ctx->env);
     } else if (ctx->pc->op == CALL || ctx->pc->op == IF) {
       retaddr = make_code(ctx->pc + 1);
       retaddr->refcount = -1;
-      push_stack(ctx->stk, retaddr);
-      push_stack(ctx->stk, ctx->env);
+      stack_push(ctx->stk, retaddr);
+      stack_push(ctx->stk, ctx->env);
       INC_REF(ctx->env);
     } else {
       assert(ctx->pc->op == TAILCALL || ctx->pc->op == TAILIF);
@@ -371,6 +371,6 @@ apply_and_run(struct object *func, struct object *args,
     return result;
   }
   eval_instructions(ctx);
-  result = pop_stack(ctx->stk);
+  result = stack_pop(ctx->stk);
   return result;
 }

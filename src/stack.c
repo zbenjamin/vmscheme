@@ -29,7 +29,7 @@ stack_empty(struct stack *stk)
 }
 
 void
-push_stack(struct stack *stk, struct object *obj)
+stack_push(struct stack *stk, struct object *obj)
 {
   stk->elems[stk->top++] = obj;
   if (stk->top == stk->size) {
@@ -44,7 +44,7 @@ push_stack(struct stack *stk, struct object *obj)
 }
 
 struct object*
-pop_stack(struct stack *stk) {
+stack_pop(struct stack *stk) {
   assert(stk->top > 0);
   return stk->elems[--stk->top];
 }

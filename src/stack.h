@@ -12,7 +12,7 @@ struct stack {
 struct stack* make_stack(unsigned int size);
 void dealloc_stack(struct stack *stk);
 int stack_empty(struct stack *stk);
-void push_stack(struct stack *stk, struct object *obj);
-struct object* pop_stack(struct stack *stk);
+void stack_push(struct stack *stk, struct object *obj);
+struct object* stack_pop(struct stack *stk);
 
 #endif // vMSCHEME_STACK_H
