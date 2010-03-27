@@ -40,7 +40,7 @@ RESERVED [\[\]|]
 }
 
 {INITIAL}{SUBSEQ}*|\+|\-|\.\.\.  {
-  yylval->str = strdup(yytext);
+  yylval->str = yytext;
   return SYMBOL;
 }
 

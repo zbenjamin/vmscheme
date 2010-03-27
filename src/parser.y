@@ -63,7 +63,7 @@ prog: /* empty */ { *parse_result = NULL; }
   ;
 
 expr: NUMBER { $$ = make_integer($1); }
-    | SYMBOL { $$ = get_symbol($1); free($1); }
+    | SYMBOL { $$ = get_symbol($1); }
     | STRING { $$ = make_string($1); }
     | BOOL_TRUE { $$ = TRUE; }
     | BOOL_FALSE { $$ = FALSE; }
