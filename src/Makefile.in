@@ -50,7 +50,7 @@ am_vmscheme_OBJECTS = environment.$(OBJEXT) instruction.$(OBJEXT) \
 	main.$(OBJEXT) object.$(OBJEXT) primitive_procedures.$(OBJEXT) \
 	stack.$(OBJEXT) type.$(OBJEXT) compiler.$(OBJEXT) \
 	utils.$(OBJEXT) eval.$(OBJEXT) parser.$(OBJEXT) \
-	scanner.$(OBJEXT) parser_aux.$(OBJEXT)
+	scanner.$(OBJEXT) parser_aux.$(OBJEXT) array.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -181,7 +181,9 @@ vmscheme_SOURCES = environment.c \
                    parser.y \
                    scanner.l \
                    parser_aux.c \
-                   parser_aux.h
+                   parser_aux.h \
+                   array.c \
+                   array.h
 
 all: all-am
 
@@ -264,6 +266,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compiler.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@
