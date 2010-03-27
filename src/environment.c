@@ -21,12 +21,12 @@ void
 dealloc_env(struct object *env)
 {
   int i;
-  for (i = 0; i < env->eval->size; ++i) {
-    free(env->eval->names[i]);
-    DEC_REF(env->eval->values[i]);
+  int size = array_size(&env->eval->values);
+  for (i = 0; i < size; ++i) {
+    DEC_REF(array_ref(&env->eval->values, i));
   }
-  free(env->eval->names);
-  free(env->eval->values);
+  array_dealloc(&env->eval->names, 1);
+  array_dealloc(&env->eval->values, 0);
   DEC_REF(env->eval->parent);
   free(env->eval);
 }
@@ -38,27 +38,13 @@ env_define(struct object *env, const char *name,
   INC_REF(val);
   int idx = env_find_idx(env, name);
   if (idx != -1) {
-    DEC_REF(env->eval->values[idx]);
-    env->eval->values[idx] = val;
+    DEC_REF(array_ref(&env->eval->values, idx));
+    array_set(&env->eval->values, idx, val);
     return;
   }
 
-  char **names;
-  struct object **values;
-  names = malloc(sizeof(char*) * (env->eval->size + 1));
-  values = malloc(sizeof(struct object*) * (env->eval->size + 1));
-  memcpy(names, env->eval->names,
-         sizeof(char*) * env->eval->size);
-  memcpy(values, env->eval->values,
-         sizeof(struct object*) * env->eval->size);
-  names[env->eval->size] = strdup(name);
-  values[env->eval->size] = val;
-  free(env->eval->names);
-  free(env->eval->values);
-
-  env->eval->names = names;
-  env->eval->values = values;
-  env->eval->size++;
+  array_add(&env->eval->names, strdup(name));
+  array_add(&env->eval->values, val);
 }
 
 struct object*
@@ -67,7 +53,7 @@ env_lookup(struct object *env, const char *name)
   while (env != NULL) {
     int idx = env_find_idx(env, name);
     if (idx != -1) {
-      return env->eval->values[idx];
+      return array_ref(&env->eval->values, idx);
     }
     env = env->eval->parent;
   }
@@ -79,8 +65,8 @@ int
 env_find_idx(struct object *env, const char *name)
 {
   int i;
-  for (i = 0; i < env->eval->size; ++i) {
-    if (strcmp(env->eval->names[i], name) == 0) {
+  for (i = 0; i < array_size(&env->eval->names); ++i) {
+    if (strcmp(array_ref(&env->eval->names, i), name) == 0) {
       return i;
     }
   }

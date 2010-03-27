@@ -2,6 +2,7 @@
 #include <environment.h>
 #include <primitive_procedures.h>
 
+#include <array.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -195,9 +196,8 @@ make_environment(struct object *parent)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(ENVIRONMENT_TYPE);
   struct environment *env = malloc(sizeof(struct environment));
-  env->names = 0;
-  env->values = 0;
-  env->size = 0;
+  array_create(&env->names);
+  array_create(&env->values);
   env->parent = parent;
   ret->eval = env;
   ret->refcount = 0;

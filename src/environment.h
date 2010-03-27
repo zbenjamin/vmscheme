@@ -1,10 +1,11 @@
 #ifndef VMSCHEME_ENVIRONMENT_H
 #define VMSCHEME_ENVIRONMENT_H
 
+#include <array.h>
+
 struct environment {
-  char **names;
-  struct object **values;
-  unsigned int size;
+  struct array names;
+  struct array values;
   struct object *parent;
 };
 
