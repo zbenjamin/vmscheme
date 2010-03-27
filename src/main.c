@@ -9,11 +9,13 @@
 #include <parser_aux.h>
 #include <primitive_procedures.h>
 #include <stack.h>
+#include <symbol.h>
 #include <type.h>
 
 int
 main(int argc, char* argv[])
 {
+  init_symbol_table();
   init_builtin_types();
   init_global_env();
   init_singleton_objects();

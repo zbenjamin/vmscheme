@@ -5,6 +5,7 @@
 #include <string.h>
 #include <object.h>
 #include <primitive_procedures.h>
+#include <symbol.h>
 %}
 
 %union {
@@ -62,19 +63,19 @@ prog: /* empty */ { *parse_result = NULL; }
   ;
 
 expr: NUMBER { $$ = make_integer($1); }
-    | SYMBOL { $$ = make_symbol($1); }
+    | SYMBOL { $$ = get_symbol($1); free($1); }
     | STRING { $$ = make_string($1); }
     | BOOL_TRUE { $$ = TRUE; }
     | BOOL_FALSE { $$ = FALSE; }
-    | QUOTE expr { $$ = make_pair(make_symbol(strdup("quote")),
+    | QUOTE expr { $$ = make_pair(get_symbol("quote"),
                                   make_pair($2, NIL)); }
     | QUASIQUOTE expr
-      { $$ = make_pair(make_symbol(strdup("quasiquote")),
+      { $$ = make_pair(get_symbol("quasiquote"),
                        make_pair($2, NIL)); }
-    | UNQUOTE expr { $$ = make_pair(make_symbol(strdup("unquote")),
+    | UNQUOTE expr { $$ = make_pair(get_symbol("unquote"),
                                     make_pair($2, NIL)); }
     | UNQUOTE_SPLICING expr
-      { $$ = make_pair(make_symbol(strdup("unquote-splicing")),
+      { $$ = make_pair(get_symbol("unquote-splicing"),
                        make_pair($2, NIL)); }
     | LP exprseq RP { $$ = reverse_list($2); dealloc_obj($2); }
     | LP exprseq DOT expr RP

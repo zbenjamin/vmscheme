@@ -26,4 +26,6 @@ vmscheme_SOURCES = environment.c \
                    parser_aux.c \
                    parser_aux.h \
                    array.c \
-                   array.h
+                   array.h \
+                   symbol.c \
+                   symbol.h
