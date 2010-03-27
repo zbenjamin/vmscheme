@@ -13,18 +13,6 @@ struct object *TRUE;
 struct object *FALSE;
 
 void
-_maybe_dealloc_obj(struct object *obj)
-{
-  assert(obj->refcount != 0);
-  if (obj->refcount > 0) {
-    --(obj->refcount);
-    if (obj->refcount == 0) {
-      dealloc_obj(obj);
-    }
-  }
-}
-
-void
 dealloc_obj(struct object *obj)
 {
   assert(obj->refcount == 0);

@@ -76,9 +76,13 @@ env_find_idx(struct object *env, const char *name)
 
 void
 env_bind_names(struct object *env, const struct object *names,
-               const struct object *values)
+               struct object *values)
 {
   while (names != NIL) {
+    if (names->type->code == SYMBOL_TYPE) {
+      env_define(env, names->sval, values);
+      return;
+    }
     env_define(env, car(names)->sval, car(values));
     names = cdr(names);
     values = cdr(values);

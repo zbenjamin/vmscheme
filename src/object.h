@@ -4,6 +4,8 @@
 #include <type.h>
 #include <instruction.h>
 
+#include <assert.h>
+
 struct object {
   struct type *type;
   union {
@@ -39,9 +41,26 @@ struct primitive_proc_rec {
     }                                               \
   } while (0)
 
-#define DEC_REF(x) _maybe_dealloc_obj(x)
+#define DEC_REF(x)                              \
+  do {                                          \
+    struct object *__obj = (x);                 \
+    assert(__obj->refcount != 0);               \
+    if (__obj->refcount > 0) {                  \
+      --(__obj->refcount);                      \
+    }                                           \
+    _MAYBE_DEALLOC_OBJ(__obj);                  \
+  } while (0)
 
-void _maybe_dealloc_obj(struct object *obj);
+#define _MAYBE_DEALLOC_OBJ(x)                   \
+  do {                                          \
+    struct object *___obj = (x);                \
+    if (___obj->refcount == 0) {                \
+      dealloc_obj(___obj);                      \
+    }                                           \
+  } while (0)
+
+#define YIELD_OBJ(x) _MAYBE_DEALLOC_OBJ(x)
+
 void dealloc_obj(struct object *obj);
 
 extern struct object *NIL;

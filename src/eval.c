@@ -192,9 +192,7 @@ eval_call(struct vm_context *ctx)
     INC_REF(result);
   }
 
-  if (args != NIL) {
-    dealloc_obj(args);
-  }
+  YIELD_OBJ(args);
   DEC_REF(func);
 }
 
@@ -234,12 +232,32 @@ apply(struct object *func, struct object *args,
     exit(1);
   }
 
-  unsigned int num_params =
-    (func->type->code == PROCEDURE_TYPE
-     ? list_length_int(func->proc_val->params)
-     : func->pproc_val->arity);
+  int wrong_args;
+  unsigned int num_params = 0;
+  if (func->type->code == PROCEDURE_TYPE) {
+    struct object *rest_params = func->proc_val->params;
+    int var_params = 0;
+    while (rest_params != NIL) {
+      if (rest_params->type->code == SYMBOL_TYPE) {
+        var_params = 1;
+        break;
+      }
+      ++num_params;
+      rest_params = cdr(rest_params);
+    }
 
-  if (num_args != num_params) {
+    if (var_params) {
+      wrong_args = (num_args < num_params);
+    } else {
+      wrong_args = (num_args != num_params);
+    }
+  } else {
+    // primitive procedure
+    num_params = func->pproc_val->arity;
+    wrong_args = (num_args != num_params);
+  }
+
+  if (wrong_args) {
       printf("Incorrect number of arguments to ");
       print_obj(func);
       printf("\n");

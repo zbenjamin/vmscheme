@@ -32,6 +32,8 @@
                  (list? (cdr x))
                  #f))))
 
+(define list (lambda x x))
+
 (define not
   (lambda (x)
     (if (eq? x #f)
