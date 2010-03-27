@@ -8,10 +8,12 @@ enum opcode {
   POP,
   LOOKUP,
   CALL,
+  TAILCALL,
   RET,
   DEFINE,
   LAMBDA,
-  IF
+  IF,
+  TAILIF
 };
 
 #endif // VMSCHEME_OPCODE_H

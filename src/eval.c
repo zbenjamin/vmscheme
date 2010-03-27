@@ -107,6 +107,7 @@ eval_instruction(struct vm_context *ctx)
     ++ctx->pc;
     break;
   case CALL:
+  case TAILCALL:
     /* printf("CALL instruction @ %p\n", *pc); */
     eval_call(ctx);
     break;
@@ -144,6 +145,7 @@ eval_instruction(struct vm_context *ctx)
     ++ctx->pc;
     break;
   case IF:
+  case TAILIF:
     /* printf("IF instruction\n"); */
     eval_if(ctx);
     break;
@@ -262,8 +264,9 @@ apply(struct object *func, struct object *args,
       push_stack(ctx->stk, ctx->env);
       INC_REF(ctx->env);
     } else {
-      retaddr = make_code(NULL);
-      retaddr->refcount = -1;
+      assert(ctx->pc->op == TAILCALL || ctx->pc->op == TAILIF);
+      // a tail call of some kind
+      DEC_REF(ctx->env);
     }
 
     struct object *new_env;

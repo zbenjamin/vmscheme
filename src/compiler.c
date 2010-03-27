@@ -17,9 +17,11 @@ static void compile_seq(struct object *exprs,
 static void compile_list(struct object *exprs,
                          struct instruction **pc);
 static void compile_elem(struct object *exprs,
-                         struct instruction **pc);
+                         struct instruction **pc,
+                         int tailcall);
 static struct object *compile_comb(struct object *exprs,
-                                   struct instruction **pc);
+                                   struct instruction **pc,
+                                   int tailcall);
 
 static struct vm_context compiler_ctx;
 static int compiler_initialized;
@@ -66,8 +68,10 @@ compile_seq(struct object *exprs, struct instruction **pc)
   struct object *next = exprs;
 
   while (next != NIL) {
-    compile_elem(car(next), pc);
-    if (cdr(next) != NIL) {
+    if (cdr(next) == NIL) {
+      compile_elem(car(next), pc, 1);
+    } else {
+      compile_elem(car(next), pc, 0);
       (*pc)->op = POP;
       ++(*pc);
     }
@@ -82,13 +86,14 @@ compile_list(struct object *exprs, struct instruction **pc)
   struct object *next = exprs;
 
   while (next != NIL) {
-    compile_elem(car(next), pc);
+    compile_elem(car(next), pc, 0);
     next = cdr(next);
   }
 }
 
 void
-compile_elem(struct object *obj, struct instruction **pc)
+compile_elem(struct object *obj, struct instruction **pc,
+             int tailcall)
 {
   struct object *elem = obj;
   while (1) {
@@ -111,7 +116,7 @@ compile_elem(struct object *obj, struct instruction **pc)
       ++(*pc);
       return;
     case PAIR_TYPE:
-      elem = compile_comb(elem, pc);
+      elem = compile_comb(elem, pc, tailcall);
       if (! elem) {
         return;
       }
@@ -126,7 +131,8 @@ compile_elem(struct object *obj, struct instruction **pc)
 // returns a replacement object that should be compiled instead or
 // NULL if the compilation of the passed combination is done
 struct object *
-compile_comb(struct object *lst, struct instruction **pc)
+compile_comb(struct object *lst, struct instruction **pc,
+             int tailcall)
 {
   struct object *first = car(lst);
 
@@ -206,7 +212,11 @@ compile_comb(struct object *lst, struct instruction **pc)
     struct object *test = make_pair(car(cdr(lst)), NIL);
     compile_list(test, pc);
     dealloc_obj(test);
-    (*pc)->op = IF;
+    if (tailcall) {
+      (*pc)->op = TAILIF;
+    } else {
+      (*pc)->op = IF;
+    }
     ++(*pc);
     return NULL;
   }
@@ -219,7 +229,11 @@ compile_comb(struct object *lst, struct instruction **pc)
   (*pc)->op = PUSH;
   (*pc)->arg = obj_nargs;
   ++(*pc);
-  (*pc)->op = CALL;
+  if (tailcall) {
+    (*pc)->op = TAILCALL;
+  } else {
+    (*pc)->op = CALL;
+  }
   ++(*pc);
   return NULL;
 }
