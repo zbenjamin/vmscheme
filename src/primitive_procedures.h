@@ -5,6 +5,8 @@
 
 void init_primitive_procs();
 
+struct vm_context;
+
 struct object *car(const struct object *pair);
 struct object *cdr(const struct object *pair);
 struct object *set_car(struct object *pair, struct object *val);

@@ -26,6 +26,7 @@ static struct object *compile_comb(struct object *exprs,
 static struct vm_context compiler_ctx;
 static int compiler_initialized;
 static struct object *transform_quasiquote;
+static struct object *macro_find_and_transform;
 
 void
 init_compiler()
@@ -41,8 +42,18 @@ init_compiler()
   INC_REF(value);
   dealloc_obj(forms);
   DEC_REF(value);
+
+  forms = parse_file("macros.scm");
+  value = eval_sequence(forms, compiler_ctx.env);
+  // ensures we don't double-free the return value
+  INC_REF(value);
+  dealloc_obj(forms);
+  DEC_REF(value);
+
   transform_quasiquote = env_lookup(compiler_ctx.env,
                                     "transform-quasiquote");
+  macro_find_and_transform = env_lookup(compiler_ctx.env,
+                                        "macro:find-and-transform");
   compiler_initialized = 1;
 }
 
@@ -136,6 +147,19 @@ compile_comb(struct object *lst, struct instruction **pc,
 {
   struct object *first = car(lst);
 
+  if (first->type->code == SYMBOL_TYPE && compiler_initialized) {
+    struct object *result;
+    struct object *args = make_pair(lst, NIL);
+    if ((result = apply_and_run(macro_find_and_transform, args,
+                                &compiler_ctx)) != FALSE) {
+      dealloc_obj(args);
+      struct object *new_form = car(result);
+      DEC_REF(result);
+      return new_form;
+    }
+    dealloc_obj(args);
+  }
+
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "quasiquote") == 0) {
     if (compiler_initialized == 0) {
@@ -164,6 +188,20 @@ compile_comb(struct object *lst, struct instruction **pc,
     // a definition
     compile_list(cdr(cdr(lst)), pc);
     (*pc)->op = DEFINE;
+    struct object *name = car(cdr(lst));
+    INC_REF(name);
+    (*pc)->arg = name;
+    ++(*pc);
+    (*pc)->op = PUSH;
+    (*pc)->arg = NIL;
+    ++(*pc);
+    return NULL;
+  }
+  if (first->type->code == SYMBOL_TYPE
+      && strcmp(first->sval, "set!") == 0) {
+    // a definition
+    compile_list(cdr(cdr(lst)), pc);
+    (*pc)->op = SET;
     struct object *name = car(cdr(lst));
     INC_REF(name);
     (*pc)->arg = name;

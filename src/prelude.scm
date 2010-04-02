@@ -40,6 +40,16 @@
         #t
         #f)))
 
+(define equal?
+  (lambda (x y)
+    (if (pair? x)
+        (if (pair? y)
+            (if (eqv? (car x) (car y))
+                (equal? (cdr x) (cdr y))
+                #f)
+            #f)
+        #f)))
+
 (define append
   (lambda (lst1 lst2)
     (if (null? lst1)
@@ -57,6 +67,12 @@
                 (error)
                 (helper (cdr lst) (+ 1 result))))))
     (helper lst 0)))
+
+(define list-tail
+  (lambda (lst k)
+    (if (= k 0)
+        lst
+        (list-tail (cdr lst) (- k 1)))))
 
 (define map
   (lambda (func lst)

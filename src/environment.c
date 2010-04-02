@@ -3,6 +3,7 @@
 #include <object.h>
 #include <primitive_procedures.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -32,8 +33,7 @@ dealloc_env(struct object *env)
 }
 
 void
-env_define(struct object *env, const char *name,
-           struct object *val)
+env_define(struct object *env, const char *name, struct object *val)
 {
   INC_REF(val);
   int idx = env_find_idx(env, name);
@@ -45,6 +45,25 @@ env_define(struct object *env, const char *name,
 
   array_add(&env->eval->names, strdup(name));
   array_add(&env->eval->values, val);
+}
+
+void
+env_set(struct object *env, const char *name, struct object *val)
+{
+  int idx;
+  do {
+    idx = env_find_idx(env, name);
+    if (idx != -1) {
+      DEC_REF(array_ref(&env->eval->values, idx));
+      array_set(&env->eval->values, idx, val);
+      INC_REF(val);
+      return;
+    }
+    env = env->eval->parent;
+  } while (env);
+
+  printf("Unbound name: %s\n", name);
+  exit(1);
 }
 
 struct object*

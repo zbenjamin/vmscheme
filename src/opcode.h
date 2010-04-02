@@ -11,6 +11,7 @@ enum opcode {
   TAILCALL,
   RET,
   DEFINE,
+  SET,
   LAMBDA,
   IF,
   TAILIF

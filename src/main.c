@@ -20,10 +20,20 @@ main(int argc, char* argv[])
   init_global_env();
   init_singleton_objects();
   init_primitive_procs();
+
+  struct object *forms;
+  struct object *value;
+  forms = parse_file("prelude.scm");
+  value = eval_sequence(forms, global_env);
+  // ensures we don't double-free the return value
+  INC_REF(value);
+  dealloc_obj(forms);
+  DEC_REF(value);
+
   init_compiler();
 
-  struct object *forms = parse_file("prelude.scm");
-  struct object *value = eval_sequence(forms, global_env);
+  forms = parse_file("stdmacro.scm");
+  value = eval_sequence(forms, global_env);
   // ensures we don't double-free the return value
   INC_REF(value);
   dealloc_obj(forms);

@@ -134,6 +134,12 @@ eval_instruction(struct vm_context *ctx)
     DEC_REF(value);
     ++ctx->pc;
     break;
+  case SET:
+    value = stack_pop(ctx->stk);
+    env_set(ctx->env, ctx->pc->arg->sval, value);
+    DEC_REF(value);
+    ++ctx->pc;
+    break;
   case LAMBDA:
     /* printf("LAMBDA instruction\n"); */
     value = ctx->pc->arg;
