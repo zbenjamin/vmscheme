@@ -2,6 +2,7 @@
 
 #include <environment.h>
 #include <eval.h>
+#include <load.h>
 #include <object.h>
 #include <parser_aux.h>
 #include <type.h>
@@ -45,6 +46,7 @@ init_primitive_procs()
   DEF_PRIM("display", display, 1, 0);
   DEF_PRIM("read", parse_interactive, 0, 0);
   DEF_PRIM("disassemble", disassemble, 1, 0);
+  DEF_PRIM("load", load_wrap, 1, 1);
 }
 
 struct object*

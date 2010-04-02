@@ -2,9 +2,9 @@
 
 #include <eval.h>
 #include <instruction.h>
+#include <load.h>
 #include <object.h>
 #include <type.h>
-#include <parser_aux.h>
 #include <primitive_procedures.h>
 #include <utils.h>
 
@@ -35,20 +35,11 @@ init_compiler()
   compiler_ctx.stk = make_stack(1024);
   compiler_ctx.env = make_environment(global_env);
   compiler_ctx.pc = NULL;
-  struct object *forms = parse_file("quasiquote.scm");
-  struct object *value = eval_sequence(forms,
-                                       compiler_ctx.env);
-  // ensures we don't double-free the return value
-  INC_REF(value);
-  dealloc_obj(forms);
-  DEC_REF(value);
-
-  forms = parse_file("macros.scm");
-  value = eval_sequence(forms, compiler_ctx.env);
-  // ensures we don't double-free the return value
-  INC_REF(value);
-  dealloc_obj(forms);
-  DEC_REF(value);
+  struct object *value;
+  value = load("quasiquote.scm", &compiler_ctx);
+  YIELD_OBJ(value);
+  value = load("macros.scm", &compiler_ctx);
+  YIELD_OBJ(value);
 
   transform_quasiquote = env_lookup(compiler_ctx.env,
                                     "transform-quasiquote");

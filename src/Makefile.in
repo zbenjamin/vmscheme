@@ -51,7 +51,7 @@ am_vmscheme_OBJECTS = environment.$(OBJEXT) instruction.$(OBJEXT) \
 	stack.$(OBJEXT) type.$(OBJEXT) compiler.$(OBJEXT) \
 	utils.$(OBJEXT) eval.$(OBJEXT) parser.$(OBJEXT) \
 	scanner.$(OBJEXT) parser_aux.$(OBJEXT) array.$(OBJEXT) \
-	symbol.$(OBJEXT)
+	symbol.$(OBJEXT) load.$(OBJEXT)
 vmscheme_OBJECTS = $(am_vmscheme_OBJECTS)
 vmscheme_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
@@ -186,7 +186,9 @@ vmscheme_SOURCES = environment.c \
                    array.c \
                    array.h \
                    symbol.c \
-                   symbol.h
+                   symbol.h \
+                   load.c \
+                   load.h
 
 all: all-am
 
@@ -274,6 +276,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/environment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eval.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/instruction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/load.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parser.Po@am__quote@

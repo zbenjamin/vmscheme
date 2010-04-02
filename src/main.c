@@ -2,11 +2,11 @@
 #include <stdlib.h>
 
 #include <compiler.h>
-#include <eval.h>
-#include <opcode.h>
 #include <environment.h>
+#include <eval.h>
 #include <instruction.h>
-#include <parser_aux.h>
+#include <load.h>
+#include <opcode.h>
 #include <primitive_procedures.h>
 #include <stack.h>
 #include <symbol.h>
@@ -21,23 +21,16 @@ main(int argc, char* argv[])
   init_singleton_objects();
   init_primitive_procs();
 
-  struct object *forms;
+  struct vm_context global_ctx;
+  global_ctx.env = global_env;
   struct object *value;
-  forms = parse_file("prelude.scm");
-  value = eval_sequence(forms, global_env);
-  // ensures we don't double-free the return value
-  INC_REF(value);
-  dealloc_obj(forms);
-  DEC_REF(value);
+  value = load("prelude.scm", &global_ctx);
+  YIELD_OBJ(value);
 
   init_compiler();
 
-  forms = parse_file("stdmacro.scm");
-  value = eval_sequence(forms, global_env);
-  // ensures we don't double-free the return value
-  INC_REF(value);
-  dealloc_obj(forms);
-  DEC_REF(value);
+  value = load("stdmacro.scm", &global_ctx);
+  YIELD_OBJ(value);
 
   struct vm_context repl_ctx;
   repl_ctx.stk = make_stack(1024);
