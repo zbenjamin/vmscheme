@@ -28,7 +28,7 @@ disassemble(struct object *proc)
 
   struct instruction *ins = proc->proc_val->code->cval;
   while (1) {
-    printf("  %02x ", ins->op);
+    printf("  %p  %02x ", ins, ins->op);
     switch (ins->op) {
     case PUSH:
       printf("PUSH\t %p ", ins->arg);
