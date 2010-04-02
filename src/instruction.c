@@ -31,7 +31,7 @@ disassemble(struct object *proc)
     printf("  %02x ", ins->op);
     switch (ins->op) {
     case PUSH:
-      printf("PUSH\t 0x%p ", ins->arg);
+      printf("PUSH\t %p ", ins->arg);
       print_obj(ins->arg);
       printf("\n");
       break;
@@ -39,7 +39,7 @@ disassemble(struct object *proc)
       printf("POP\n");
       break;
     case LOOKUP:
-      printf("LOOKUP\t 0x%p ", ins->arg);
+      printf("LOOKUP\t %p ", ins->arg);
       print_obj(ins->arg);
       printf("\n");
       break;
@@ -54,12 +54,12 @@ disassemble(struct object *proc)
       return NIL;
       break;
     case DEFINE:
-      printf("DEFINE\t 0x%p ", ins->arg);
+      printf("DEFINE\t %p ", ins->arg);
       print_obj(ins->arg);
       printf("\n");
       break;
     case LAMBDA:
-      printf("LAMBDA\t 0x%p\n", ins->arg);
+      printf("LAMBDA\t %p\n", ins->arg);
       break;
     case IF:
       printf("IF\n");
