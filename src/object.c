@@ -184,8 +184,8 @@ make_environment(struct object *parent)
   struct object *ret = malloc(sizeof(struct object));
   ret->type = get_type(ENVIRONMENT_TYPE);
   struct environment *env = malloc(sizeof(struct environment));
-  array_create(&env->names);
-  array_create(&env->values);
+  str_array_create(&env->names);
+  obj_array_create(&env->values);
   env->parent = parent;
   ret->eval = env;
   ret->refcount = 0;

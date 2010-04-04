@@ -24,10 +24,11 @@ dealloc_env(struct object *env)
   int i;
   int size = array_size(&env->eval->values);
   for (i = 0; i < size; ++i) {
-    DEC_REF(array_ref(&env->eval->values, i));
+    free(*str_array_ref(&env->eval->names, i));
+    DEC_REF(*obj_array_ref(&env->eval->values, i));
   }
-  array_dealloc(&env->eval->names, 1);
-  array_dealloc(&env->eval->values, 0);
+  array_dealloc(&env->eval->names);
+  array_dealloc(&env->eval->values);
   DEC_REF(env->eval->parent);
   free(env->eval);
 }
@@ -38,13 +39,14 @@ env_define(struct object *env, const char *name, struct object *val)
   INC_REF(val);
   int idx = env_find_idx(env, name);
   if (idx != -1) {
-    DEC_REF(array_ref(&env->eval->values, idx));
+    DEC_REF(*obj_array_ref(&env->eval->values, idx));
     array_set(&env->eval->values, idx, val);
     return;
   }
 
-  array_add(&env->eval->names, strdup(name));
-  array_add(&env->eval->values, val);
+  char *dupname = strdup(name);
+  array_add(&env->eval->names, &dupname);
+  array_add(&env->eval->values, &val);
 }
 
 void
@@ -54,8 +56,8 @@ env_set(struct object *env, const char *name, struct object *val)
   do {
     idx = env_find_idx(env, name);
     if (idx != -1) {
-      DEC_REF(array_ref(&env->eval->values, idx));
-      array_set(&env->eval->values, idx, val);
+      DEC_REF(*obj_array_ref(&env->eval->values, idx));
+      array_set(&env->eval->values, idx, &val);
       INC_REF(val);
       return;
     }
@@ -72,7 +74,7 @@ env_lookup(struct object *env, const char *name)
   while (env != NULL) {
     int idx = env_find_idx(env, name);
     if (idx != -1) {
-      return array_ref(&env->eval->values, idx);
+      return *obj_array_ref(&env->eval->values, idx);
     }
     env = env->eval->parent;
   }
@@ -85,7 +87,7 @@ env_find_idx(struct object *env, const char *name)
 {
   int i;
   for (i = 0; i < array_size(&env->eval->names); ++i) {
-    if (strcmp(array_ref(&env->eval->names, i), name) == 0) {
+    if (strcmp(*str_array_ref(&env->eval->names, i), name) == 0) {
       return i;
     }
   }

@@ -5,23 +5,20 @@
 #include <string.h>
 
 void
-array_create(struct array *ar)
+array_create(struct array *ar, int elem_size)
 {
+  ar->elem_size = elem_size;
   ar->size = 0;
   ar->allocated = 0;
   ar->elems = NULL;
 }
 
 void
-array_dealloc(struct array *ar, int do_free)
+array_dealloc(struct array *ar)
 {
-  if (do_free) {
-    int i;
-    for (i = 0; i < ar->size; ++i) {
-      free(ar->elems[i]);
-    }
+  if (ar->elems) {
+    free(ar->elems);
   }
-  free(ar->elems);
 }
 
 int
@@ -36,18 +33,19 @@ array_add(struct array *ar, void *elem)
   if (ar->size + 1 > ar->allocated) {
     int new_allocated;
     if (ar->allocated == 0) {
-      new_allocated = 10;
+      new_allocated = 16;
     } else {
       new_allocated = ar->allocated * 2;
     }
-    void **new_elems = malloc(sizeof(void*) * new_allocated);
-    memcpy(new_elems, ar->elems, sizeof(void*) * ar->size);
+    uint8_t *new_elems = malloc(new_allocated * ar->elem_size);
+    memcpy(new_elems, ar->elems, ar->size * ar->elem_size);
     free(ar->elems);
     ar->allocated = new_allocated;
     ar->elems = new_elems;
   }
 
-  ar->elems[ar->size++] = elem;
+  memcpy(ar->elems + ar->size * ar->elem_size, elem, ar->elem_size);
+  ++ar->size;
 }
 
 void*
@@ -58,7 +56,7 @@ array_ref(struct array *ar, int idx)
     exit(1);
   }
 
-  return ar->elems[idx];
+  return ar->elems + idx * ar->elem_size;
 }
 
 void
@@ -69,5 +67,5 @@ array_set(struct array *ar, int idx, void *elem)
     exit(1);
   }
 
-  ar->elems[idx] = elem;
+  memcpy(ar->elems + idx * ar->elem_size, elem, ar->elem_size);
 }
