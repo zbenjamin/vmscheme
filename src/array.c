@@ -69,3 +69,12 @@ array_set(struct array *ar, int idx, void *elem)
 
   memcpy(ar->elems + idx * ar->elem_size, elem, ar->elem_size);
 }
+
+void*
+array2raw(struct array *ar)
+{
+  int bytes = ar->size * ar->elem_size;
+  void *storage = malloc(bytes);
+  memcpy(storage, ar->elems, bytes);
+  return storage;
+}

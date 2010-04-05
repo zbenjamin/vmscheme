@@ -12,15 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void compile_seq(struct object *exprs,
-                        struct instruction **pc);
-static void compile_list(struct object *exprs,
-                         struct instruction **pc);
-static void compile_elem(struct object *exprs,
-                         struct instruction **pc,
+static void compile_seq(struct object *exprs, struct array *prog);
+static void compile_list(struct object *exprs, struct array *prog);
+static void compile_elem(struct object *exprs, struct array *prog,
                          int tailcall);
 static struct object *compile_comb(struct object *exprs,
-                                   struct instruction **pc,
+                                   struct array *prog,
                                    int tailcall);
 
 static struct vm_context compiler_ctx;
@@ -48,34 +45,44 @@ init_compiler()
   compiler_initialized = 1;
 }
 
+void
+add_instruction(struct array *prog, enum opcode op,
+                struct object *arg)
+{
+  struct instruction ins;
+  ins.op = op;
+  ins.arg = arg;
+  array_add(prog, &ins);
+}
+
 struct instruction*
 compile(struct object *exprs)
 {
-  struct instruction *prog;
-  prog = malloc(sizeof(struct instruction) * 1024);
-  memset(prog, 0, sizeof(struct instruction) * 1024);
-  struct instruction *pc = prog;
+  struct array *prog = malloc(sizeof(struct array));
+  array_create(prog, sizeof(struct instruction));
 
-  compile_seq(exprs, &pc);
-  pc->op = RET;
-  ++pc;
-  pc->op = END;
-  return prog;
+  compile_seq(exprs, prog);
+  add_instruction(prog, RET, NULL);
+  add_instruction(prog, END, NULL);
+
+  struct instruction *stream = array2raw(prog);
+  array_dealloc(prog);
+  free(prog);
+  return stream;
 }
 
 // compiles each element, but only keeps the last value
 void
-compile_seq(struct object *exprs, struct instruction **pc)
+compile_seq(struct object *exprs, struct array *prog)
 {
   struct object *next = exprs;
 
   while (next != NIL) {
     if (cdr(next) == NIL) {
-      compile_elem(car(next), pc, 1);
+      compile_elem(car(next), prog, 1);
     } else {
-      compile_elem(car(next), pc, 0);
-      (*pc)->op = POP;
-      ++(*pc);
+      compile_elem(car(next), prog, 0);
+      add_instruction(prog, POP, NULL);
     }
     next = cdr(next);
   }
@@ -83,19 +90,18 @@ compile_seq(struct object *exprs, struct instruction **pc)
 
 // just compiles each element
 void
-compile_list(struct object *exprs, struct instruction **pc)
+compile_list(struct object *exprs, struct array *prog)
 {
   struct object *next = exprs;
 
   while (next != NIL) {
-    compile_elem(car(next), pc, 0);
+    compile_elem(car(next), prog, 0);
     next = cdr(next);
   }
 }
 
 void
-compile_elem(struct object *obj, struct instruction **pc,
-             int tailcall)
+compile_elem(struct object *obj, struct array *prog, int tailcall)
 {
   struct object *elem = obj;
   while (1) {
@@ -106,19 +112,15 @@ compile_elem(struct object *obj, struct instruction **pc,
     case STRING_TYPE:
     case PROCEDURE_TYPE:
     case PRIMITIVE_PROC_TYPE:
-      (*pc)->op = PUSH;
+      add_instruction(prog, PUSH, elem);
       INC_REF(elem);
-      (*pc)->arg = elem;
-      ++(*pc);
       return;
     case SYMBOL_TYPE:
-      (*pc)->op = LOOKUP;
+      add_instruction(prog, LOOKUP, elem);
       INC_REF(elem);
-      (*pc)->arg = elem;
-      ++(*pc);
       return;
     case PAIR_TYPE:
-      elem = compile_comb(elem, pc, tailcall);
+      elem = compile_comb(elem, prog, tailcall);
       if (! elem) {
         return;
       }
@@ -133,8 +135,7 @@ compile_elem(struct object *obj, struct instruction **pc,
 // returns a replacement object that should be compiled instead or
 // NULL if the compilation of the passed combination is done
 struct object *
-compile_comb(struct object *lst, struct instruction **pc,
-             int tailcall)
+compile_comb(struct object *lst, struct array *prog, int tailcall)
 {
   struct object *first = car(lst);
 
@@ -167,39 +168,29 @@ compile_comb(struct object *lst, struct instruction **pc,
 
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "quote") == 0) {
-    (*pc)->op = PUSH;
     struct object *datum = car(cdr(lst));
+    add_instruction(prog, PUSH, datum);
     INC_REF(datum);
-    (*pc)->arg = datum;
-    ++(*pc);
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "define") == 0) {
     // a definition
-    compile_list(cdr(cdr(lst)), pc);
-    (*pc)->op = DEFINE;
+    compile_list(cdr(cdr(lst)), prog);
     struct object *name = car(cdr(lst));
+    add_instruction(prog, DEFINE, name);
     INC_REF(name);
-    (*pc)->arg = name;
-    ++(*pc);
-    (*pc)->op = PUSH;
-    (*pc)->arg = NIL;
-    ++(*pc);
+    add_instruction(prog, PUSH, NIL);
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
       && strcmp(first->sval, "set!") == 0) {
     // a definition
-    compile_list(cdr(cdr(lst)), pc);
-    (*pc)->op = SET;
+    compile_list(cdr(cdr(lst)), prog);
     struct object *name = car(cdr(lst));
+    add_instruction(prog, SET, name);
     INC_REF(name);
-    (*pc)->arg = name;
-    ++(*pc);
-    (*pc)->op = PUSH;
-    (*pc)->arg = NIL;
-    ++(*pc);
+    add_instruction(prog, PUSH, NIL);
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
@@ -209,10 +200,8 @@ compile_comb(struct object *lst, struct instruction **pc,
     template = make_procedure(car(cdr(lst)),
                               make_code(compile(cdr(cdr(lst)))),
                               NULL);
+    add_instruction(prog, LAMBDA, template);
     INC_REF(template);
-    (*pc)->op = LAMBDA;
-    (*pc)->arg = template;
-    ++(*pc);
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
@@ -232,21 +221,16 @@ compile_comb(struct object *lst, struct instruction **pc,
                          NULL);
     INC_REF(alt);
     dealloc_obj(alt_code);
-    (*pc)->op = LAMBDA;
-    (*pc)->arg = conseq;
-    ++(*pc);
-    (*pc)->op = LAMBDA;
-    (*pc)->arg = alt;
-    ++(*pc);
+    add_instruction(prog, LAMBDA, conseq);
+    add_instruction(prog, LAMBDA, alt);
     struct object *test = make_pair(car(cdr(lst)), NIL);
-    compile_list(test, pc);
+    compile_list(test, prog);
     dealloc_obj(test);
     if (tailcall) {
-      (*pc)->op = TAILIF;
+      add_instruction(prog, TAILIF, NULL);
     } else {
-      (*pc)->op = IF;
+      add_instruction(prog, IF, NULL);
     }
-    ++(*pc);
     return NULL;
   }
 
@@ -254,15 +238,12 @@ compile_comb(struct object *lst, struct instruction **pc,
   int nargs = list_length_int(lst) - 1;
   struct object *obj_nargs = make_integer(nargs);
   INC_REF(obj_nargs);
-  compile_list(lst, pc);
-  (*pc)->op = PUSH;
-  (*pc)->arg = obj_nargs;
-  ++(*pc);
+  compile_list(lst, prog);
+  add_instruction(prog, PUSH, obj_nargs);
   if (tailcall) {
-    (*pc)->op = TAILCALL;
+    add_instruction(prog, TAILCALL, NULL);
   } else {
-    (*pc)->op = CALL;
+    add_instruction(prog, CALL, NULL);
   }
-  ++(*pc);
   return NULL;
 }

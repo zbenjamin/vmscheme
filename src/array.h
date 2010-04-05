@@ -18,6 +18,8 @@ void array_add(struct array *ar, void *elem);
 void *array_ref(struct array *ar, int idx);
 void array_set(struct array *ar, int idx, void *elem);
 
+void *array2raw(struct array *ar);
+
 #define obj_array_create(ar) \
   array_create((ar), sizeof(struct object*))
 #define obj_array_ref(ar, idx) \
