@@ -119,7 +119,7 @@ set_scanner_interactive(int flag)
 }
 
 void
-init_once()
+init_once(void)
 {
   str_size = 0;
   str_size_max = 1024;
@@ -127,7 +127,7 @@ init_once()
 }
                  
 void
-reset_scanner()
+reset_scanner(void)
 {
   static int init_once_done = 0;
   if (! init_once_done) {

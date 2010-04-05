@@ -13,7 +13,7 @@
 #include <string.h>
 
 static struct object*
-the_global_environment()
+the_global_environment(void)
 {
   return global_env;
 }
@@ -23,7 +23,7 @@ the_global_environment()
              make_primitive_procedure(func, arity, name, takes_ctx))
 
 void
-init_primitive_procs()
+init_primitive_procs(void)
 {
   DEF_PRIM("cons", make_pair, 2, 0);
   DEF_PRIM("car", car, 1, 0);

@@ -12,7 +12,7 @@ static int env_find_idx(struct object *env, const char *name);
 struct object *global_env;
 
 void
-init_global_env()
+init_global_env(void)
 {
   global_env = make_environment(NULL);
   global_env->refcount = -1;

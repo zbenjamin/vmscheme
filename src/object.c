@@ -71,7 +71,7 @@ dealloc_obj(struct object *obj)
 }
 
 void
-init_singleton_objects()
+init_singleton_objects(void)
 {
   NIL = malloc(sizeof(struct object));
   NIL->type = get_type(NIL_TYPE);

@@ -10,7 +10,7 @@ struct type* get_type(int typeid);
 struct type* get_type_named(char* name);
 struct type* make_type(char* name);
 
-void init_builtin_types();
+void init_builtin_types(void);
 
 enum builtin_types {
   NIL_TYPE,

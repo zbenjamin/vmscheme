@@ -4,7 +4,7 @@
 #include <string.h>
 
 void
-init_symbol_table()
+init_symbol_table(void)
 {
   array_create(&symbol_table, sizeof(struct object *));
 }

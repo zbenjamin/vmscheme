@@ -6,12 +6,12 @@
 
 extern FILE *yyin;
 void set_scanner_interactive(int flag);
-void reset_scanner();
+void reset_scanner(void);
 int yyparse(void*, struct object** parse_result);
 extern int yydebug;
 
 struct object*
-parse_interactive()
+parse_interactive(void)
 {
   struct object *result;
   yyin = stdin;

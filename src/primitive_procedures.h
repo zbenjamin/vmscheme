@@ -3,7 +3,7 @@
 
 #include <object.h>
 
-void init_primitive_procs();
+void init_primitive_procs(void);
 
 struct vm_context;
 

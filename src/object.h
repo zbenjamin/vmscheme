@@ -67,7 +67,7 @@ extern struct object *NIL;
 extern struct object *TRUE;
 extern struct object *FALSE;
 
-void init_singleton_objects();
+void init_singleton_objects(void);
 
 struct object* make_integer(int x);
 struct object* make_string(char *str);

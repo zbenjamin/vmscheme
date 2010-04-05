@@ -9,7 +9,7 @@ static struct type type_table[MAX_TYPES];
 static unsigned int next_entry = 0;
 
 void
-init_builtin_types()
+init_builtin_types(void)
 {
   make_type("nil");
   make_type("boolean");

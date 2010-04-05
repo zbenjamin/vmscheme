@@ -9,7 +9,7 @@ struct environment {
   struct object *parent;
 };
 
-void init_global_env();
+void init_global_env(void);
 
 void dealloc_env(struct object *env);
 void env_define(struct object *env, const char *name,

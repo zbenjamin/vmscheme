@@ -26,7 +26,7 @@ static struct object *transform_quasiquote;
 static struct object *macro_find_and_transform;
 
 void
-init_compiler()
+init_compiler(void)
 {
   compiler_initialized = 0;
   compiler_ctx.stk = make_stack(1024);
