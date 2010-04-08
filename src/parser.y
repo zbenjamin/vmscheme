@@ -88,7 +88,7 @@ prog: /* empty */ { *parse_result = NULL; }
 expr: NUMBER { $$ = make_integer($1);
                set_debug_info($$, loc2dbi(dbiproto, &@$)); }
     | SYMBOL { $$ = get_symbol($1);
-              set_debug_info($$, loc2dbi(dbiproto, &@$)); }
+               set_debug_info($$, loc2dbi(dbiproto, &@$)); }
     | STRING { $$ = make_string($1);
                set_debug_info($$, loc2dbi(dbiproto, &@$)); }
     | BOOL_TRUE { $$ = TRUE; }

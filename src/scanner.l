@@ -11,6 +11,14 @@ static void str_expand(int);
 static void str_appends(char *s);
 static void str_appendc(char s);
 
+/* handle locations */
+int yycolumn = 1;
+
+#define YY_USER_ACTION                                        \
+  yylloc->first_line = yylloc->last_line = yylineno;          \
+  yylloc->first_column = yycolumn;                            \
+  yylloc->last_column = yycolumn + yyleng - 1;                \
+  yycolumn += yyleng;
 
 %}
 
@@ -60,7 +68,8 @@ RESERVED [\[\]|]
   \\t { str_appendc('\t'); }
   \\r { str_appendc('\r'); }
   \\b { str_appendc('\b'); }
-  \\(.|\n) { str_appendc(yytext[1]); }
+  \\. { str_appendc(yytext[1]); }
+  \\\n { ++yylineno; yycolumn = 1; str_appendc(yytext[1]); }
   [^\\\n\"]+ { str_appends(yytext); }
 }
 
@@ -74,7 +83,7 @@ RESERVED [\[\]|]
 
 [ \t]                            /* ignore whitespace */
 ;.*                              /* ignore comments */
-\n  { if (interactive) yyterminate(); }
+\n  { ++yylineno; yycolumn = 1; if (interactive) yyterminate(); }
 
 {RESERVED}  {
   printf("reserved character encountered: %s\n", yytext);
@@ -135,6 +144,8 @@ reset_scanner(void)
     init_once();
     init_once_done = 1;
   }
+  yylineno = 1;
+  yycolumn = 1;
 
   BEGIN(0);
 }
