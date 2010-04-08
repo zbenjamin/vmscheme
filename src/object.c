@@ -67,6 +67,13 @@ dealloc_obj(struct object *obj)
     printf("don't know how to deallocate a %s\n", obj->type->name);
     exit(1);
   }
+
+  if (obj->dinfo) {
+    if (obj->dinfo->src_file) {
+      free(obj->dinfo->src_file);
+    }
+    free(obj->dinfo);
+  }
   free(obj);
 }
 
@@ -91,6 +98,7 @@ make_integer(int x)
   ret->type = get_type(INTEGER_TYPE);
   ret->ival = x;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   return ret;
 }
 
@@ -101,6 +109,7 @@ make_string(char *str)
   ret->type = get_type(STRING_TYPE);
   ret->sval = str;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   return ret;
 }
 
@@ -111,6 +120,7 @@ make_symbol(char *str)
   ret->type = get_type(SYMBOL_TYPE);
   ret->sval = str;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   return ret;
 }
 
@@ -123,6 +133,7 @@ make_pair(struct object *car, struct object *cdr)
   ret->pval[0] = car;
   ret->pval[1] = cdr;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   INC_REF(car);
   INC_REF(cdr);
   return ret;
@@ -141,6 +152,7 @@ make_procedure(struct object *params,
   rec->env = env;
   ret->proc_val = rec;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   INC_REF(params);
   INC_REF(code);
   if (env) {
@@ -165,6 +177,7 @@ make_primitive_procedure(void *func,
   rec->takes_ctx = takes_ctx;
   ret->pproc_val = rec;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   return ret;
 }
 
@@ -175,6 +188,7 @@ make_code(struct instruction *code)
   ret->type = get_type(CODE_TYPE);
   ret->cval = code;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   return ret;
 }
 
@@ -189,6 +203,7 @@ make_environment(struct object *parent)
   env->parent = parent;
   ret->eval = env;
   ret->refcount = 0;
+  ret->dinfo = NULL;
   if (parent) {
     INC_REF(parent);
   }

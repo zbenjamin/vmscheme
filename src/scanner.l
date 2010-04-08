@@ -18,6 +18,7 @@ static void str_appendc(char s);
 %option noinput
 %option noyywrap
 %option bison-bridge
+%option bison-locations
 
 DIGIT    [0-9]
 LETTER   [a-zA-Z]

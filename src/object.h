@@ -3,6 +3,7 @@
 
 #include <type.h>
 #include <instruction.h>
+#include <debug.h>
 
 #include <assert.h>
 
@@ -18,6 +19,7 @@ struct object {
     struct environment *eval;
   };
   int refcount;
+  struct debuginfo *dinfo;
 };
 
 struct proc_rec {

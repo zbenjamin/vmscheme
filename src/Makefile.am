@@ -30,4 +30,6 @@ vmscheme_SOURCES = environment.c \
                    symbol.c \
                    symbol.h \
                    load.c \
-                   load.h
+                   load.h \
+                   debug.c \
+                   debug.h
