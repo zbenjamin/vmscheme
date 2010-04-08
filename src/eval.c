@@ -1,6 +1,7 @@
 #include <eval.h>
 
 #include <compiler.h>
+#include <debug.h>
 #include <object.h>
 #include <opcode.h>
 #include <primitive_procedures.h>
@@ -99,7 +100,9 @@ eval_instruction(struct vm_context *ctx)
     /* printf("LOOKUP instruction\n"); */
     value = env_lookup(ctx->env, ctx->pc->arg->sval);
     if (! value) {
-      printf("Unbound name: %s\n", ctx->pc->arg->sval);
+      char buf[1024];
+      debug_loc_str(ctx->pc->arg, buf, 1024);
+      printf("%s: unbound name: %s\n", buf, ctx->pc->arg->sval);
       exit(1);
     }
     stack_push(ctx->stk, value);
@@ -233,8 +236,10 @@ apply(struct object *func, struct object *args,
 
   if (func->type->code != PRIMITIVE_PROC_TYPE
       && func->type->code != PROCEDURE_TYPE) {
-    printf("Cannot apply object of type %s\n",
-           func->type->name);
+    char buf[1024];
+    debug_loc_str(func, buf, 1024);
+    printf("Cannot apply object of type %s, created at %s\n",
+           func->type->name, buf);
     exit(1);
   }
 
