@@ -81,7 +81,8 @@ loc2dbi(struct debuginfo *proto, YYLTYPE *loc)
 prog: /* empty */ { *parse_result = NULL; }
     | exprseq { *parse_result = reverse_list($$);
                  dealloc_obj($$);
-                 set_debug_info($$, loc2dbi(dbiproto, &@$));
+                 set_debug_info(*parse_result,
+                                loc2dbi(dbiproto, &@$));
       }
   ;
 
