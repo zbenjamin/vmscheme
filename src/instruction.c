@@ -19,14 +19,21 @@ dealloc_bytecode(struct instruction *stream)
 }
 
 struct object*
-disassemble(struct object *proc)
+disassemble_wrap(struct object *proc)
 {
   if (proc->type->code != PROCEDURE_TYPE) {
     printf("Wrong type for disassemble: %s\n", proc->type->name);
     exit(1);
   }
 
-  struct instruction *ins = proc->proc_val->code->cval;
+  disassemble(proc->proc_val->code->cval);
+  return NIL;
+}
+
+void
+disassemble(struct instruction *stream)
+{
+  struct instruction *ins = stream;
   while (1) {
     printf("  %p  %02x ", ins, ins->op);
     switch (ins->op) {
@@ -51,10 +58,15 @@ disassemble(struct object *proc)
       break;
     case RET:
       printf("RET\n");
-      return NIL;
+      return;
       break;
     case DEFINE:
       printf("DEFINE\t %p ", ins->arg);
+      print_obj(ins->arg);
+      printf("\n");
+      break;
+    case SET:
+      printf("SET\t %p ", ins->arg);
       print_obj(ins->arg);
       printf("\n");
       break;
@@ -68,10 +80,9 @@ disassemble(struct object *proc)
       printf("TAILIF\n");
       break;
     default:
-      printf("Unknown opcode: %d\n", ins->op);
+      printf("\nUnknown opcode: %d\n", ins->op);
       exit(1);
     }
     ++ins;
   }
-  return NIL;
 }

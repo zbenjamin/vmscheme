@@ -45,7 +45,7 @@ init_primitive_procs(void)
   DEF_PRIM("the-global-environment", the_global_environment, 0, 0);
   DEF_PRIM("display", display, 1, 0);
   DEF_PRIM("read", parse_interactive, 0, 0);
-  DEF_PRIM("disassemble", disassemble, 1, 0);
+  DEF_PRIM("disassemble", disassemble_wrap, 1, 0);
   DEF_PRIM("load", load_wrap, 1, 1);
 }
 

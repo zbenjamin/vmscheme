@@ -10,6 +10,7 @@ struct instruction {
 };
 
 void dealloc_bytecode(struct instruction *stream);
-struct object *disassemble(struct object *proc);
+struct object *disassemble_wrap(struct object *proc);
+void disassemble(struct instruction *stream);
 
 #endif // VMSCHEME_INSTRUCTION_H
