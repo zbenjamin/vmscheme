@@ -66,6 +66,7 @@ struct primitive_proc_rec {
 void dealloc_obj(struct object *obj);
 
 extern struct object *NIL;
+extern struct object *UNSPECIFIC;
 extern struct object *TRUE;
 extern struct object *FALSE;
 

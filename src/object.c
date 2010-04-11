@@ -9,6 +9,7 @@
 #include <string.h>
 
 struct object *NIL;
+struct object *UNSPECIFIC;
 struct object *TRUE;
 struct object *FALSE;
 
@@ -83,12 +84,17 @@ init_singleton_objects(void)
   NIL = malloc(sizeof(struct object));
   NIL->type = get_type(NIL_TYPE);
   NIL->refcount = -1;
+  UNSPECIFIC = malloc(sizeof(struct object));
+  UNSPECIFIC->type = get_type(UNSPECIFIC_TYPE);
+  UNSPECIFIC->refcount = -1;
   TRUE = malloc(sizeof(struct object));
   TRUE->type = get_type(BOOLEAN_TYPE);
   TRUE->refcount = -1;
   FALSE = malloc(sizeof(struct object));
   FALSE->type = get_type(BOOLEAN_TYPE);
   FALSE->refcount = -1;
+
+  env_define(global_env, "unspecific", UNSPECIFIC);
 }
 
 struct object*
@@ -218,6 +224,9 @@ print_obj(struct object *obj)
   switch (obj->type->code) {
   case NIL_TYPE:
     printf("()");
+    break;
+  case UNSPECIFIC_TYPE:
+    printf("<unspecified>");
     break;
   case BOOLEAN_TYPE:
     if (obj == TRUE) {

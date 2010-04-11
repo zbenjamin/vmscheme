@@ -1,29 +1,32 @@
 (define null?
   (lambda (x) (= (object-type x) 0)))
 
-(define boolean?
+(define unspecific?
   (lambda (x) (= (object-type x) 1)))
 
-(define integer?
+(define boolean?
   (lambda (x) (= (object-type x) 2)))
 
-(define string?
+(define integer?
   (lambda (x) (= (object-type x) 3)))
 
-(define symbol?
+(define string?
   (lambda (x) (= (object-type x) 4)))
 
-(define pair?
+(define symbol?
   (lambda (x) (= (object-type x) 5)))
 
-(define procedure?
+(define pair?
   (lambda (x) (= (object-type x) 6)))
 
-(define primitive-procedure?
+(define procedure?
   (lambda (x) (= (object-type x) 7)))
 
+(define primitive-procedure?
+  (lambda (x) (= (object-type x) 8)))
+
 (define environment?
-  (lambda (x) (= (object-type x) 9)))
+  (lambda (x) (= (object-type x) 10)))
 
 (define list?
   (lambda (x) (if (null? x)

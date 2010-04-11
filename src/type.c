@@ -12,6 +12,7 @@ void
 init_builtin_types(void)
 {
   make_type("nil");
+  make_type("unspecific");
   make_type("boolean");
   make_type("integer");
   make_type("string");
