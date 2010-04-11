@@ -287,6 +287,7 @@
     (macro:convert-pattern-helper
      pat
      #f
+     #t
      (lambda (pat emode)
        (if (contains? pat literals)
            pat
@@ -301,6 +302,7 @@
     (macro:convert-pattern-helper
      pat
      #f
+     #f
      (lambda (pat emode)
        (if (contains? pat variables)
            (if emode
@@ -309,29 +311,45 @@
            pat)))))
 
 (define macro:convert-pattern-helper
-  (lambda (pat emode atom-handler)
+  (lambda (pat emode ellipsis-check atom-handler)
     (if (null? pat)
         pat
         (if (pair? pat)
             (if (pair? (cdr pat))
                 (if (eq? (car (cdr pat)) '...)
-                    (if (pair? (cdr (cdr pat)))
-                        (error "bad context for '...'")
+                    (if ellipsis-check
+                        (if (pair? (cdr (cdr pat)))
+                            (error "bad context for '...'")
+                            (cons (macro:make-repeat
+                                   (macro:convert-pattern-helper
+                                    (car pat)
+                                    #t
+                                    ellipsis-check
+                                    atom-handler))
+                                  (macro:convert-pattern-helper
+                                   (cdr (cdr pat)) #f ellipsis-check
+                                   atom-handler)))
                         (cons (macro:make-repeat
                                (macro:convert-pattern-helper
                                 (car pat)
                                 #t
+                                ellipsis-check
                                 atom-handler))
                               (macro:convert-pattern-helper
-                               (cdr (cdr pat)) #f atom-handler)))
+                               (cdr (cdr pat)) #f ellipsis-check
+                               atom-handler)))
                     (cons (macro:convert-pattern-helper
-                           (car pat) emode atom-handler)
+                           (car pat) emode ellipsis-check
+                           atom-handler)
                           (macro:convert-pattern-helper
-                           (cdr pat) emode atom-handler)))
+                           (cdr pat) emode ellipsis-check
+                           atom-handler)))
                 (cons (macro:convert-pattern-helper
-                       (car pat) emode atom-handler)
+                       (car pat) emode ellipsis-check
+                       atom-handler)
                       (macro:convert-pattern-helper
-                       (cdr pat) emode atom-handler)))
+                       (cdr pat) emode ellipsis-check
+                       atom-handler)))
             (atom-handler pat emode)))))
 
 ;; procedures for making macro transformers
