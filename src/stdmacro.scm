@@ -1,3 +1,10 @@
+(define-syntax if
+  (syntax-rules ()
+    ((if x y z)
+     (%if x y z))
+    ((if x y)
+     (%if x y unspecific))))
+
 ;; these are taken almost directly from R5RS
 
 (define-syntax cond

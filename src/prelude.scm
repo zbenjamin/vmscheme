@@ -1,7 +1,7 @@
 (define null?
   (lambda (x) (= (object-type x) 0)))
 
-(define unspecific?
+(define unspec%ific?
   (lambda (x) (= (object-type x) 1)))
 
 (define boolean?
@@ -29,9 +29,9 @@
   (lambda (x) (= (object-type x) 10)))
 
 (define list?
-  (lambda (x) (if (null? x)
+  (lambda (x) (%if (null? x)
              #t
-             (if (pair? x)
+             (%if (pair? x)
                  (list? (cdr x))
                  #f))))
 
@@ -39,15 +39,15 @@
 
 (define not
   (lambda (x)
-    (if (eq? x #f)
+    (%if (eq? x #f)
         #t
         #f)))
 
 (define equal?
   (lambda (x y)
-    (if (pair? x)
-        (if (pair? y)
-            (if (eqv? (car x) (car y))
+    (%if (pair? x)
+        (%if (pair? y)
+            (%if (eqv? (car x) (car y))
                 (equal? (cdr x) (cdr y))
                 #f)
             #f)
@@ -55,7 +55,7 @@
 
 (define append
   (lambda (lst1 lst2)
-    (if (null? lst1)
+    (%if (null? lst1)
         lst2
         (cons (car lst1)
               (append (cdr lst1) lst2)))))
@@ -64,16 +64,16 @@
   (lambda (lst)
     (define helper
       (lambda (lst result)
-        (if (null? lst)
+        (%if (null? lst)
             result
-            (if (not (pair? lst))
+            (%if (not (pair? lst))
                 (error)
                 (helper (cdr lst) (+ 1 result))))))
     (helper lst 0)))
 
 (define list-tail
   (lambda (lst k)
-    (if (= k 0)
+    (%if (= k 0)
         lst
         (list-tail (cdr lst) (- k 1)))))
 
@@ -81,7 +81,7 @@
   (lambda (func lst)
     (define helper
       (lambda (lst result)
-        (if (null? lst)
+        (%if (null? lst)
             result
             (helper (cdr lst)
                     (cons (func (car lst)) result)))))
@@ -91,7 +91,7 @@
   (lambda ()
     (define eval-each
       (lambda (lst)
-        (if (= (length lst) 1)
+        (%if (= (length lst) 1)
             (eval (car lst) (the-global-environment))
             ((lambda ()
               (eval (car lst) (the-global-environment))

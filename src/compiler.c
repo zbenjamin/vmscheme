@@ -205,7 +205,7 @@ compile_comb(struct object *lst, struct array *prog, int tailcall)
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
-      && strcmp(first->sval, "if") == 0) {
+      && strcmp(first->sval, "%if") == 0) {
     // an if statement.  turn the two clauses into lambdas
     struct object *conseq;
     struct object *conseq_code = make_pair(car(cdr(cdr(lst))), NIL);

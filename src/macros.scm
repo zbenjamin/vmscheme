@@ -15,8 +15,8 @@
 
 (define macro:variable?
   (lambda (x)
-    (if (list? x)
-        (if (= (length x) 2)
+    (%if (list? x)
+        (%if (= (length x) 2)
             (eq? (car x) *var-tag*)
             #f)
         #f)))
@@ -31,8 +31,8 @@
 
 (define macro:e-variable?
   (lambda (x)
-    (if (list? x)
-        (if (= (length x) 2)
+    (%if (list? x)
+        (%if (= (length x) 2)
             (eq? (car x) *evar-tag*)
             #f)
         #f)))
@@ -47,8 +47,8 @@
 
 (define macro:repeat?
   (lambda (x)
-    (if (list? x)
-        (if (= (length x) 2)
+    (%if (list? x)
+        (%if (= (length x) 2)
             (eq? (car x) *repeat-tag*)
             #f)
         #f)))
@@ -61,16 +61,16 @@
   (lambda (pat)
     (define loop
       (lambda (pat result)
-        (if (pair? pat)
-            (if (macro:variable? (car pat))
+        (%if (pair? pat)
+            (%if (macro:variable? (car pat))
                 (loop (cdr pat)
                       (cons (macro:variable-name (car pat))
                             result))
-                (if (macro:e-variable? (car pat))
+                (%if (macro:e-variable? (car pat))
                     (loop (cdr pat)
                           (cons (macro:e-variable-name (car pat))
                                 result))
-                    (if (pair? (car pat))
+                    (%if (pair? (car pat))
                         (loop (cdr pat)
                               (append
                                (macro:extract-variables (car pat))
@@ -83,8 +83,8 @@
 (define match:eqv
   (lambda (const)
     (lambda (data dict succeed)
-      (if (pair? data)
-          (if (eqv? (car data) const)
+      (%if (pair? data)
+          (%if (eqv? (car data) const)
               (succeed dict 1)
               #f)
           #f))))
@@ -92,11 +92,11 @@
 (define match:variable
   (lambda (var)
     (lambda (data dict succeed)
-      (if (pair? data)
+      (%if (pair? data)
           ((lambda ()
             (define vcell (macro:lookup var dict))
-            (if vcell
-                (if (equal? (macro:value vcell) (car data))
+            (%if vcell
+                (%if (equal? (macro:value vcell) (car data))
                     (succeed dict 1)
                     #f)
                 (succeed (macro:bind var (car data) dict) 1))))
@@ -105,10 +105,10 @@
 (define match:e-variable
   (lambda (var)
     (lambda (data dict succeed)
-      (if (pair? data)
+      (%if (pair? data)
           ((lambda ()
              (define vcell (macro:lookup var dict))
-             (if vcell
+             (%if vcell
                  (succeed (macro:bind var
                                       (append (macro:value vcell)
                                               (list (car data)))
@@ -123,9 +123,9 @@
     (lambda (data dict succeed)
       (define loop
         (lambda (data dict n)
-          (if (null? data)
+          (%if (null? data)
               (succeed dict n)
-              (if (pair? data)
+              (%if (pair? data)
                   (combinator data dict
                               (lambda (newdict k)
                                 (loop (list-tail data k)
@@ -143,13 +143,13 @@
       (lambda (data dict succeed)
         (define loop
           (lambda (data matchers dict)
-            (if (pair? matchers)
+            (%if (pair? matchers)
                 ((car matchers) data dict
                  (lambda (newdict n)
                    (loop (list-tail data n) (list-tail matchers 1)
                          newdict)))
-                (if (null? matchers)
-                    (if (pair? data)
+                (%if (null? matchers)
+                    (%if (pair? data)
                         #f
                         (succeed dict 1))
                     ;; improper list, which we don't handle yet
@@ -161,10 +161,10 @@
 
 (define assq
   (lambda (key alist)
-    (if (null? alist)
+    (%if (null? alist)
         #f
-        (if (pair? alist)
-            (if (eq? (car (car alist)) key)
+        (%if (pair? alist)
+            (%if (eq? (car (car alist)) key)
                 (car alist)
                 (assq key (cdr alist)))
             (error "not an alist")))))
@@ -186,14 +186,14 @@
   (lambda (pattern)
     (define compile
       (lambda (pattern)
-        (if (macro:variable? pattern)
+        (%if (macro:variable? pattern)
             (match:variable (macro:variable-name pattern))
-            (if (macro:e-variable? pattern)
+            (%if (macro:e-variable? pattern)
                 (match:e-variable (macro:e-variable-name pattern))
-                (if (macro:repeat? pattern)
+                (%if (macro:repeat? pattern)
                     (match:repeat (compile
                                    (macro:repeat-pattern pattern)))
-                    (if (list? pattern)
+                    (%if (list? pattern)
                         (apply match:list (map compile pattern))
                         (match:eqv pattern)))))))
     (compile pattern)))
@@ -214,8 +214,8 @@
   (lambda (var)
     (lambda (dict succeed)
       (define vcell (macro:lookup var dict))
-      (if vcell
-          (if (pair? (macro:value vcell))
+      (%if vcell
+          (%if (pair? (macro:value vcell))
               (succeed (macro:bind var (cdr (macro:value vcell)) dict)
                        (list (car (macro:value vcell))))
               (succeed dict '()))
@@ -228,7 +228,7 @@
         (lambda (dict result)
           (combinator dict
                       (lambda (newdict items)
-                        (if (null? items)
+                        (%if (null? items)
                             (succeed newdict result)
                             (loop newdict (append result items)))))))
       (loop dict '()))))
@@ -238,7 +238,7 @@
     (lambda (dict succeed)
       (define loop
         (lambda (dict substituters result)
-          (if (pair? substituters)
+          (%if (pair? substituters)
               ((car substituters) dict
                (lambda (newdict items)
                  (loop newdict (cdr substituters)
@@ -250,14 +250,14 @@
   (lambda (pattern)
     (define compile
       (lambda (pattern)
-        (if (macro:variable? pattern)
+        (%if (macro:variable? pattern)
             (subst:variable (macro:variable-name pattern))
-            (if (macro:e-variable? pattern)
+            (%if (macro:e-variable? pattern)
                 (subst:e-variable (macro:e-variable-name pattern))
-                (if (macro:repeat? pattern)
+                (%if (macro:repeat? pattern)
                     (subst:repeat (compile
                                    (macro:repeat-pattern pattern)))
-                    (if (list? pattern)
+                    (%if (list? pattern)
                         (apply subst:list (map compile pattern))
                         (subst:eqv pattern)))))))
     (compile pattern)))
@@ -270,10 +270,10 @@
 
 (define contains?
   (lambda (x lst)
-    (if (null? lst)
+    (%if (null? lst)
         #f
-        (if (pair? lst)
-            (if (eq? x (car lst))
+        (%if (pair? lst)
+            (%if (eq? x (car lst))
                 #t
                 (contains? x (cdr lst)))
             #f))))
@@ -292,10 +292,10 @@
      #f
      #t
      (lambda (pat emode)
-       (if (contains? pat literals)
+       (%if (contains? pat literals)
            pat
-           (if (symbol? pat)
-               (if emode
+           (%if (symbol? pat)
+               (%if emode
                    (macro:make-e-variable pat)
                    (macro:make-variable pat))
                pat))))))
@@ -307,21 +307,21 @@
      #f
      #f
      (lambda (pat emode)
-       (if (contains? pat variables)
-           (if emode
+       (%if (contains? pat variables)
+           (%if emode
                (macro:make-e-variable pat)
                (macro:make-variable pat))
            pat)))))
 
 (define macro:convert-pattern-helper
   (lambda (pat emode ellipsis-check atom-handler)
-    (if (null? pat)
+    (%if (null? pat)
         pat
-        (if (pair? pat)
-            (if (pair? (cdr pat))
-                (if (eq? (car (cdr pat)) '...)
-                    (if ellipsis-check
-                        (if (pair? (cdr (cdr pat)))
+        (%if (pair? pat)
+            (%if (pair? (cdr pat))
+                (%if (eq? (car (cdr pat)) '...)
+                    (%if ellipsis-check
+                        (%if (pair? (cdr (cdr pat)))
                             (error "bad context for '...'")
                             (cons (macro:make-repeat
                                    (macro:convert-pattern-helper
@@ -382,10 +382,10 @@
     (lambda (form)
       (define loop
         (lambda (rules)
-          (if (null? rules)
+          (%if (null? rules)
               (error "bad syntax")
               ((lambda (val)
-                 (if val
+                 (%if val
                      val
                      (loop (cdr rules))))
                ((car rules) form)))))
@@ -410,7 +410,7 @@
 (define macro:find-and-transform
   (lambda (form)
     (define vcell (macro:lookup (car form) *macro-table*))
-    (if vcell
+    (%if vcell
         ((macro:value vcell) form)
         #f)))
 
