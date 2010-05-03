@@ -58,16 +58,16 @@ add_instruction(struct array *prog, enum opcode op,
 struct instruction*
 compile(struct object *exprs)
 {
-  struct array *prog = malloc(sizeof(struct array));
-  array_create(prog, sizeof(struct instruction));
+  struct array prog;
+  array_create(&prog, sizeof(struct instruction));
 
-  compile_seq(exprs, prog);
-  add_instruction(prog, RET, NULL);
-  add_instruction(prog, END, NULL);
+  compile_seq(exprs, &prog);
+  add_instruction(&prog, RET, NULL);
+  add_instruction(&prog, END, NULL);
 
-  struct instruction *stream = array2raw(prog);
-  array_dealloc(prog);
-  free(prog);
+  struct instruction *stream;
+  stream = (struct instruction*) array2raw(&prog);
+  array_dealloc(&prog);
   return stream;
 }
 

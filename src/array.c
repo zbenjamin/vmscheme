@@ -37,7 +37,8 @@ array_add(struct array *ar, void *elem)
     } else {
       new_allocated = ar->allocated * 2;
     }
-    uint8_t *new_elems = malloc(new_allocated * ar->elem_size);
+    uint8_t *new_elems;
+    new_elems = (uint8_t*) malloc(new_allocated * ar->elem_size);
     memcpy(new_elems, ar->elems, ar->size * ar->elem_size);
     free(ar->elems);
     ar->allocated = new_allocated;
