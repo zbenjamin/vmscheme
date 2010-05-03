@@ -280,6 +280,9 @@
 
 (define error
   (lambda (msg)
+    (display "error: ")
+    (display msg)
+    (display "\n")
     (0)))
 
 (define match:convert-pattern
