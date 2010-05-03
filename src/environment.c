@@ -40,7 +40,7 @@ env_define(struct object *env, const char *name, struct object *val)
   int idx = env_find_idx(env, name);
   if (idx != -1) {
     DEC_REF(*obj_array_ref(&env->eval->values, idx));
-    array_set(&env->eval->values, idx, val);
+    array_set(&env->eval->values, idx, &val);
     return;
   }
 
