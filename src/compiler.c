@@ -174,7 +174,7 @@ compile_comb(struct object *lst, struct array *prog, int tailcall)
     return NULL;
   }
   if (first->type->code == SYMBOL_TYPE
-      && strcmp(first->sval, "define") == 0) {
+      && strcmp(first->sval, "%define") == 0) {
     // a definition
     compile_list(cdr(cdr(lst)), prog);
     struct object *name = car(cdr(lst));

@@ -1,33 +1,33 @@
-(define make-cons
+(%define make-cons
   (lambda (car cdr)
     (list 'cons car cdr)))
 
-(define make-append
+(%define make-append
   (lambda (lst1 lst2)
     (list 'append lst1 lst2)))
 
-(define make-tagged-list
+(%define make-tagged-list
   (lambda (elem tag)
     (make-cons (list 'quote tag)
                (make-cons elem '()))))
 
-(define do-quote
+(%define do-quote
   (lambda (elem)
     (list 'quote elem)))
 
-(define make-quasiquote
+(%define make-quasiquote
   (lambda (elem)
     (make-tagged-list elem 'quasiquote)))
 
-(define make-unquote
+(%define make-unquote
   (lambda (elem)
     (make-tagged-list elem 'unquote)))
 
-(define make-unquote-splicing
+(%define make-unquote-splicing
   (lambda (elem)
     (make-tagged-list elem 'unquote-splicing)))
 
-(define list-tagged?
+(%define list-tagged?
   (lambda (lst len tag)
     (%if (list? lst)
         (%if (pair? lst)
@@ -37,48 +37,48 @@
             #f)
         #f)))
 
-(define quoted?
+(%define quoted?
   (lambda (x)
     (list-tagged? x 2 'quote)))
 
-(define quasiquoted?
+(%define quasiquoted?
   (lambda (x)
     (list-tagged? x 2 'quasiquote)))
 
-(define unquoted?
+(%define unquoted?
   (lambda (x)
     (list-tagged? x 2 'unquote)))
 
-(define unquoted-splicing?
+(%define unquoted-splicing?
   (lambda (x)
     (list-tagged? x 2 'unquote-splicing)))
 
-(define quote-text
+(%define quote-text
   (lambda (x)
     (car (cdr x))))
 
-(define quasiquote-text
+(%define quasiquote-text
   (lambda (x)
     (car (cdr x))))
 
-(define unquote-text
+(%define unquote-text
   (lambda (x)
     (car (cdr x))))
 
-(define unquote-splicing-text
+(%define unquote-splicing-text
   (lambda (x)
     (car (cdr x))))
 
-(define error
+(%define error
   (lambda ()
     ;; causes an error
     (0)))
 
-(define transform-quasiquote
+(%define transform-quasiquote
   (lambda (pat)
     (qq-one (quasiquote-text pat) 0)))
 
-(define qq-one
+(%define qq-one
   (lambda (pat level)
     (%if (null? pat)
         (do-quote pat)
@@ -97,10 +97,10 @@
                     (%if (unquoted-splicing? pat)
                         (error)
                         (qq-list pat level))))))))
-(define qq-list
+(%define qq-list
   (lambda (pat level)
     ;; these helpers are basically here because we don't have let
-    (define helper
+    (%define helper
       (lambda (elem rest)
         (%if (quasiquoted? elem)
             (make-cons (make-quasiquote
@@ -125,7 +125,7 @@
                                             (- level 1)))
                                    rest))
                     (helper2 elem rest (qq-list elem level)))))))
-    (define helper2
+    (%define helper2
       (lambda (elem rest value)
         (%if (quoted? value)
             (%if (eq? elem (quote-text value))

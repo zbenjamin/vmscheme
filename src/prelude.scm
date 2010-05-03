@@ -1,49 +1,49 @@
-(define null?
+(%define null?
   (lambda (x) (= (object-type x) 0)))
 
-(define unspec%ific?
+(%define unspec%ific?
   (lambda (x) (= (object-type x) 1)))
 
-(define boolean?
+(%define boolean?
   (lambda (x) (= (object-type x) 2)))
 
-(define integer?
+(%define integer?
   (lambda (x) (= (object-type x) 3)))
 
-(define string?
+(%define string?
   (lambda (x) (= (object-type x) 4)))
 
-(define symbol?
+(%define symbol?
   (lambda (x) (= (object-type x) 5)))
 
-(define pair?
+(%define pair?
   (lambda (x) (= (object-type x) 6)))
 
-(define procedure?
+(%define procedure?
   (lambda (x) (= (object-type x) 7)))
 
-(define primitive-procedure?
+(%define primitive-procedure?
   (lambda (x) (= (object-type x) 8)))
 
-(define environment?
+(%define environment?
   (lambda (x) (= (object-type x) 10)))
 
-(define list?
+(%define list?
   (lambda (x) (%if (null? x)
              #t
              (%if (pair? x)
                  (list? (cdr x))
                  #f))))
 
-(define list (lambda x x))
+(%define list (lambda x x))
 
-(define not
+(%define not
   (lambda (x)
     (%if (eq? x #f)
         #t
         #f)))
 
-(define equal?
+(%define equal?
   (lambda (x y)
     (%if (pair? x)
         (%if (pair? y)
@@ -53,16 +53,16 @@
             #f)
         #f)))
 
-(define append
+(%define append
   (lambda (lst1 lst2)
     (%if (null? lst1)
         lst2
         (cons (car lst1)
               (append (cdr lst1) lst2)))))
 
-(define length
+(%define length
   (lambda (lst)
-    (define helper
+    (%define helper
       (lambda (lst result)
         (%if (null? lst)
             result
@@ -71,15 +71,15 @@
                 (helper (cdr lst) (+ 1 result))))))
     (helper lst 0)))
 
-(define list-tail
+(%define list-tail
   (lambda (lst k)
     (%if (= k 0)
         lst
         (list-tail (cdr lst) (- k 1)))))
 
-(define map
+(%define map
   (lambda (func lst)
-    (define helper
+    (%define helper
       (lambda (lst result)
         (%if (null? lst)
             result
@@ -87,9 +87,9 @@
                     (cons (func (car lst)) result)))))
     (reverse (helper lst '()))))
 
-(define initial-repl
+(%define initial-repl
   (lambda ()
-    (define eval-each
+    (%define eval-each
       (lambda (lst)
         (%if (= (length lst) 1)
             (eval (car lst) (the-global-environment))

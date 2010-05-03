@@ -1,3 +1,10 @@
+(define-syntax define
+  (syntax-rules ()
+    ((define (name arg ...) body1 body2 ...)
+     (define name (lambda (arg ...) body1 body2 ...)))
+    ((define name value)
+     (%define name value))))
+
 (define-syntax if
   (syntax-rules ()
     ((if x y z)

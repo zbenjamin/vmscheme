@@ -5,15 +5,15 @@
 
 ;; support functions
 
-(define *var-tag* (list '*var-tag*))
-(define *evar-tag* (list '*evar-tag*))
-(define *repeat-tag* (list '*repeat-tag*))
+(%define *var-tag* (list '*var-tag*))
+(%define *evar-tag* (list '*evar-tag*))
+(%define *repeat-tag* (list '*repeat-tag*))
 
-(define macro:make-variable
+(%define macro:make-variable
   (lambda (name)
     (list *var-tag* name)))
 
-(define macro:variable?
+(%define macro:variable?
   (lambda (x)
     (%if (list? x)
         (%if (= (length x) 2)
@@ -21,15 +21,15 @@
             #f)
         #f)))
 
-(define macro:variable-name
+(%define macro:variable-name
   (lambda (x)
     (car (cdr x))))
 
-(define macro:make-e-variable
+(%define macro:make-e-variable
   (lambda (name)
     (list *evar-tag* name)))
 
-(define macro:e-variable?
+(%define macro:e-variable?
   (lambda (x)
     (%if (list? x)
         (%if (= (length x) 2)
@@ -37,15 +37,15 @@
             #f)
         #f)))
 
-(define macro:e-variable-name
+(%define macro:e-variable-name
   (lambda (x)
     (car (cdr x))))
 
-(define macro:make-repeat
+(%define macro:make-repeat
   (lambda (pattern)
     (list *repeat-tag* pattern)))
 
-(define macro:repeat?
+(%define macro:repeat?
   (lambda (x)
     (%if (list? x)
         (%if (= (length x) 2)
@@ -53,13 +53,13 @@
             #f)
         #f)))
 
-(define macro:repeat-pattern
+(%define macro:repeat-pattern
   (lambda (x)
     (car (cdr x))))
 
-(define macro:extract-variables
+(%define macro:extract-variables
   (lambda (pat)
-    (define loop
+    (%define loop
       (lambda (pat result)
         (%if (pair? pat)
             (%if (macro:variable? (car pat))
@@ -80,7 +80,7 @@
     (loop pat '())))
 
 ;; combinators for matching
-(define match:eqv
+(%define match:eqv
   (lambda (const)
     (lambda (data dict succeed)
       (%if (pair? data)
@@ -89,12 +89,12 @@
               #f)
           #f))))
 
-(define match:variable
+(%define match:variable
   (lambda (var)
     (lambda (data dict succeed)
       (%if (pair? data)
           ((lambda ()
-            (define vcell (macro:lookup var dict))
+            (%define vcell (macro:lookup var dict))
             (%if vcell
                 (%if (equal? (macro:value vcell) (car data))
                     (succeed dict 1)
@@ -102,12 +102,12 @@
                 (succeed (macro:bind var (car data) dict) 1))))
           #f))))
 
-(define match:e-variable
+(%define match:e-variable
   (lambda (var)
     (lambda (data dict succeed)
       (%if (pair? data)
           ((lambda ()
-             (define vcell (macro:lookup var dict))
+             (%define vcell (macro:lookup var dict))
              (%if vcell
                  (succeed (macro:bind var
                                       (append (macro:value vcell)
@@ -118,10 +118,10 @@
                           1))))
           #f))))
 
-(define match:repeat
+(%define match:repeat
   (lambda (combinator)
     (lambda (data dict succeed)
-      (define loop
+      (%define loop
         (lambda (data dict n)
           (%if (null? data)
               (succeed dict n)
@@ -137,11 +137,11 @@
 ;; we don't have to deal with any backtracking because the only
 ;; matcher type that consumes more than one element is repeat, and
 ;; it can only occur at the end of a list
-(define match:list
+(%define match:list
   (lambda combinators
-    (define list-match
+    (%define list-match
       (lambda (data dict succeed)
-        (define loop
+        (%define loop
           (lambda (data matchers dict)
             (%if (pair? matchers)
                 ((car matchers) data dict
@@ -159,7 +159,7 @@
 
 ;; dictionary support
 
-(define assq
+(%define assq
   (lambda (key alist)
     (%if (null? alist)
         #f
@@ -169,22 +169,22 @@
                 (assq key (cdr alist)))
             (error "not an alist")))))
 
-(define macro:bind
+(%define macro:bind
   (lambda (var data dict)
     (cons (list var data) dict)))
 
-(define macro:lookup
+(%define macro:lookup
   (lambda (var dict)
     (assq var dict)))
 
-(define macro:value
+(%define macro:value
   (lambda (vcell)
     (car (cdr vcell))))
 
 ;; compiler for matcher
-(define match:->combinators
+(%define match:->combinators
   (lambda (pattern)
-    (define compile
+    (%define compile
       (lambda (pattern)
         (%if (macro:variable? pattern)
             (match:variable (macro:variable-name pattern))
@@ -200,20 +200,20 @@
 
 ;; substitution combinators
 
-(define subst:eqv
+(%define subst:eqv
   (lambda (const)
     (lambda (dict succeed)
       (succeed dict (list const)))))
 
-(define subst:variable
+(%define subst:variable
   (lambda (var)
     (lambda (dict succeed)
       (succeed dict (list (macro:value (macro:lookup var dict)))))))
 
-(define subst:e-variable
+(%define subst:e-variable
   (lambda (var)
     (lambda (dict succeed)
-      (define vcell (macro:lookup var dict))
+      (%define vcell (macro:lookup var dict))
       (%if vcell
           (%if (pair? (macro:value vcell))
               (succeed (macro:bind var (cdr (macro:value vcell)) dict)
@@ -221,10 +221,10 @@
               (succeed dict '()))
           (succeed dict '())))))
 
-(define subst:repeat
+(%define subst:repeat
   (lambda (combinator)
     (lambda (dict succeed)
-      (define loop
+      (%define loop
         (lambda (dict result)
           (combinator dict
                       (lambda (newdict items)
@@ -233,10 +233,10 @@
                             (loop newdict (append result items)))))))
       (loop dict '()))))
 
-(define subst:list
+(%define subst:list
   (lambda combinators
     (lambda (dict succeed)
-      (define loop
+      (%define loop
         (lambda (dict substituters result)
           (%if (pair? substituters)
               ((car substituters) dict
@@ -246,9 +246,9 @@
               (succeed dict (list result)))))
       (loop dict combinators '()))))
 
-(define subst:->combinators
+(%define subst:->combinators
   (lambda (pattern)
-    (define compile
+    (%define compile
       (lambda (pattern)
         (%if (macro:variable? pattern)
             (subst:variable (macro:variable-name pattern))
@@ -268,7 +268,7 @@
 ;;   =>
 ;; (cons (else ((*var-tag*) result1) ((*evar-tag*) result2)))
 
-(define contains?
+(%define contains?
   (lambda (x lst)
     (%if (null? lst)
         #f
@@ -278,14 +278,14 @@
                 (contains? x (cdr lst)))
             #f))))
 
-(define error
+(%define error
   (lambda (msg)
     (display "error: ")
     (display msg)
     (display "\n")
     (0)))
 
-(define match:convert-pattern
+(%define match:convert-pattern
   (lambda (pat literals)
     (macro:convert-pattern-helper
      pat
@@ -300,7 +300,7 @@
                    (macro:make-variable pat))
                pat))))))
 
-(define subst:convert-pattern
+(%define subst:convert-pattern
   (lambda (pat variables)
     (macro:convert-pattern-helper
      pat
@@ -313,7 +313,7 @@
                (macro:make-variable pat))
            pat)))))
 
-(define macro:convert-pattern-helper
+(%define macro:convert-pattern-helper
   (lambda (pat emode ellipsis-check atom-handler)
     (%if (null? pat)
         pat
@@ -357,30 +357,30 @@
 
 ;; procedures for making macro transformers
 
-(define macro:make-rule
+(%define macro:make-rule
   (lambda (match-pattern subst-pattern)
-    (define matcher (match:->combinators match-pattern))
-    (define substituter (subst:->combinators subst-pattern))
+    (%define matcher (match:->combinators match-pattern))
+    (%define substituter (subst:->combinators subst-pattern))
     (lambda (form)
       (matcher (list form)
                '()
                (lambda (dict n)
                  (substituter dict (lambda (d result) result)))))))
 
-(define macro:clause->rule
+(%define macro:clause->rule
   (lambda (match-pattern subst-pattern literals)
-    (define new-match-pattern
+    (%define new-match-pattern
       (match:convert-pattern match-pattern literals))
-    (define new-subst-pattern
+    (%define new-subst-pattern
       (subst:convert-pattern
        subst-pattern
        (macro:extract-variables new-match-pattern)))
     (macro:make-rule new-match-pattern new-subst-pattern)))
 
-(define macro:rules->transformer
+(%define macro:rules->transformer
   (lambda (rules)
     (lambda (form)
-      (define loop
+      (%define loop
         (lambda (rules)
           (%if (null? rules)
               (error "bad syntax")
@@ -391,7 +391,7 @@
                ((car rules) form)))))
       (loop rules))))
 
-(define macro:clauses->transformer
+(%define macro:clauses->transformer
   (lambda (clauses literals)
     (macro:rules->transformer
      (map (lambda (clause)
@@ -400,16 +400,16 @@
                                 literals))
           clauses))))
 
-(define *macro-table* '())
+(%define *macro-table* '())
 
-(define macro:add-macro!
+(%define macro:add-macro!
   (lambda (name transformer)
     (set! *macro-table*
           (macro:bind name transformer *macro-table*))))
 
-(define macro:find-and-transform
+(%define macro:find-and-transform
   (lambda (form)
-    (define vcell (macro:lookup (car form) *macro-table*))
+    (%define vcell (macro:lookup (car form) *macro-table*))
     (%if vcell
         ((macro:value vcell) form)
         #f)))
