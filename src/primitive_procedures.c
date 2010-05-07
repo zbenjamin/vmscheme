@@ -237,12 +237,13 @@ struct object*
 eqv_p(struct object *o1, struct object *o2)
 {
   // XXX
-  if (o1->type->code != SYMBOL_TYPE
-      || o2->type->code != SYMBOL_TYPE) {
-    return FALSE;
-  }
-  if (strcmp(o1->sval, o2->sval) == 0) {
-    return TRUE;
+  if ((o1->type->code == SYMBOL_TYPE
+       && o2->type->code == SYMBOL_TYPE)
+      || (o1->type->code == STRING_TYPE
+          && o2->type->code == STRING_TYPE)) {
+    if (strcmp(o1->sval, o2->sval) == 0) {
+      return TRUE;
+    }
   }
   return FALSE;
 }
