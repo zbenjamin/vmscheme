@@ -218,19 +218,22 @@
           (%if (pair? (macro:value vcell))
               (succeed (macro:bind var (cdr (macro:value vcell)) dict)
                        (list (car (macro:value vcell))))
-              (succeed dict '()))
-          (succeed dict '())))))
+              #f)
+          #f))))
 
 (%define subst:repeat
   (lambda (combinator)
     (lambda (dict succeed)
       (%define loop
-        (lambda (dict result)
-          (combinator dict
-                      (lambda (newdict items)
-                        (%if (null? items)
-                            (succeed newdict result)
-                            (loop newdict (append result items)))))))
+        (lambda (newdict result)
+          ((lambda (val)
+             (%if val
+                 val
+                 (succeed dict result)))
+           (combinator newdict
+                       (lambda (newdict2 items)
+                         (loop newdict2
+                              (append result items)))))))
       (loop dict '()))))
 
 (%define subst:list
