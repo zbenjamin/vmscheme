@@ -382,12 +382,20 @@
 
 (%define macro:rules->transformer
   (lambda (rules)
+    ;; useful for debugging macros:
+    ;; (display "making transformer with ")
+    ;; (display (length rules))
+    ;; (display " rules\n")
     (lambda (form)
       (%define loop
         (lambda (rules)
           (%if (null? rules)
               (error "bad syntax")
               ((lambda (val)
+                 ;; useful for debugging macros:
+                 ;; (display "trying rule (")
+                 ;; (display (- (length rules) 1))
+                 ;; (display " remain)\n")
                  (%if val
                      val
                      (loop (cdr rules))))

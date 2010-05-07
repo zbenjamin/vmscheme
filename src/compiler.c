@@ -146,6 +146,11 @@ compile_comb(struct object *lst, struct array *prog, int tailcall)
                                 &compiler_ctx)) != FALSE) {
       dealloc_obj(args);
       struct object *new_form = car(result);
+      /* useful for debugging macros: */
+      /* print_obj(lst); */
+      /* printf("\n=>\n"); */
+      /* print_obj(new_form); */
+      /* printf("\n"); */
       DEC_REF(result);
       return new_form;
     }
