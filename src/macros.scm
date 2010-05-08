@@ -79,15 +79,25 @@
             result)))
     (loop pat '())))
 
+(%define match:same?
+  (lambda (x y)
+    (%if (eqv? x y)
+         #t
+         (%if (string? x)
+              (%if (string? y)
+                   (string=? x y)
+                   #f)
+              #f))))
+
 ;; combinators for matching
-(%define match:eqv
+(%define match:const
   (lambda (const)
     (lambda (data dict succeed)
       (%if (pair? data)
-          (%if (eqv? (car data) const)
-              (succeed dict 1)
-              #f)
-          #f))))
+           (%if (match:same? (car data) const)
+                (succeed dict 1)
+                #f)
+           #f))))
 
 (%define match:variable
   (lambda (var)
@@ -195,12 +205,12 @@
                                    (macro:repeat-pattern pattern)))
                     (%if (list? pattern)
                         (apply match:list (map compile pattern))
-                        (match:eqv pattern)))))))
+                        (match:const pattern)))))))
     (compile pattern)))
 
 ;; substitution combinators
 
-(%define subst:eqv
+(%define subst:const
   (lambda (const)
     (lambda (dict succeed)
       (succeed dict (list const)))))
@@ -262,7 +272,7 @@
                                    (macro:repeat-pattern pattern)))
                     (%if (list? pattern)
                         (apply subst:list (map compile pattern))
-                        (subst:eqv pattern)))))))
+                        (subst:const pattern)))))))
     (compile pattern)))
 
 ;; procedures to convert the R5RS pattern language to an internal

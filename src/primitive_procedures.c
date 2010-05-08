@@ -47,6 +47,7 @@ init_primitive_procs(void)
   DEF_PRIM("read", parse_interactive, 0, 0);
   DEF_PRIM("disassemble", disassemble_wrap, 1, 0);
   DEF_PRIM("load", load_wrap, 1, 1);
+  DEF_PRIM("string=?", stringeq_p, 2, 0);
 }
 
 struct object*
@@ -236,16 +237,14 @@ eq_p(struct object *o1, struct object *o2)
 struct object*
 eqv_p(struct object *o1, struct object *o2)
 {
-  // XXX
-  if ((o1->type->code == SYMBOL_TYPE
-       && o2->type->code == SYMBOL_TYPE)
-      || (o1->type->code == STRING_TYPE
-          && o2->type->code == STRING_TYPE)) {
-    if (strcmp(o1->sval, o2->sval) == 0) {
+  if (o1->type->code == INTEGER_TYPE
+      && o2->type->code == INTEGER_TYPE) {
+    if (o1->ival == o2->ival) {
       return TRUE;
     }
+    return FALSE;
   }
-  return FALSE;
+  return eq_p(o1, o2);
 }
 
 struct object*
@@ -263,4 +262,21 @@ display(struct object *obj)
     print_obj(obj);
   }
   return NIL;
+}
+
+struct object*
+stringeq_p(struct object *o1, struct object *o2) {
+  if (o1->type->code != STRING_TYPE) {
+    printf("Argument 1 to string=? is not an string\n");
+    exit(1);
+  }
+  if (o2->type->code != STRING_TYPE) {
+    printf("Argument 2 to string=? is not an string\n");
+    exit(1);
+  }
+
+  if (strcmp(o1->sval, o2->sval) == 0) {
+    return TRUE;
+  }
+  return FALSE;
 }

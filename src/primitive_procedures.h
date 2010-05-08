@@ -23,5 +23,7 @@ struct object *eq_p(struct object *o1, struct object *o2);
 struct object *eqv_p(struct object *o1, struct object *o2);
 struct object *object_type(struct object *obj);
 struct object *display(struct object *obj);
+struct object* stringeq_p(struct object *o1, struct object *o2);
+
 
 #endif // VMSCHEME_PRIMITIVE_PROCEDURES_H
