@@ -5,6 +5,6 @@
 #include <instruction.h>
 
 void init_compiler(void);
-struct instruction* compile(struct object *exprs);
+struct instruction* compile(struct pair *exprs);
 
 #endif // VMSCHEME_COMPILER_H

@@ -36,9 +36,11 @@ main(int argc, char* argv[])
   repl_ctx.stk = make_stack(1024);
   repl_ctx.env = make_environment(global_env);
   repl_ctx.pc = NULL;
-  INC_REF(repl_ctx.env);
+  INC_REF(&repl_ctx.env->obj);
 
-  struct object *repl = env_lookup(global_env, "initial-repl");
+  struct object *ret = env_lookup(global_env, "initial-repl");
+  assert(ret->type->code == PROCEDURE_TYPE);
+  struct procedure *repl = container_of(ret, struct procedure, obj);
   apply_and_run(repl, NIL, &repl_ctx);
 
   return 0;

@@ -7,6 +7,6 @@
 struct array symbol_table;
 
 void init_symbol_table(void);
-struct object *get_symbol(char *name);
+struct symbol *get_symbol(char *name);
 
 #endif // VMSCHEME_SYMBOL_H

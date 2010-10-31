@@ -2,37 +2,71 @@
 #define VMSCHEME_OBJECT_H
 
 #include <type.h>
-#include <instruction.h>
 #include <debug.h>
+#include <stddef.h>
 
 #include <assert.h>
 
+#define container_of(ptr, type, member) ({                   \
+      const typeof(((type *)0)->member) *__mptr = (ptr);     \
+      (type*) ((char*) __mptr - offsetof(type,member));})
+
 struct object {
   struct type *type;
-  union {
-    int ival;
-    char *sval;
-    struct object **pval;
-    struct proc_rec *proc_val;
-    struct primitive_proc_rec *pproc_val;
-    struct instruction *cval;
-    struct environment *eval;
-  };
   int refcount;
   struct debuginfo *dinfo;
 };
 
-struct proc_rec {
-  struct object *params;
-  struct object *code;
-  struct object *env;
+struct integer {
+  struct object obj;
+  int value;
 };
 
-struct primitive_proc_rec {
+struct string {
+  struct object obj;
+  char* value;
+};
+
+struct symbol {
+  struct object obj;
+  char* value;
+};
+
+struct pair {
+  struct object obj;
+  struct object *car;
+  struct object *cdr;
+};
+
+enum procedure_type {
+  PRIMITIVE,
+  COMPOUND
+};
+
+struct procedure {
+  struct object obj;
+  unsigned int type;
+};
+
+struct compound_proc {
+  struct procedure proc;
+  // could be a list or a symbol
+  struct object *params;
+  struct code *code;
+  struct environment *env;
+};
+
+struct prim_proc {
+  struct procedure proc;
   unsigned int arity;
   void *func;
   const char *name;
   unsigned int takes_ctx;
+};
+
+struct code {
+  struct object obj;
+  struct instruction *ins;
 };
 
 #define INC_REF(x)                                  \
@@ -65,27 +99,28 @@ struct primitive_proc_rec {
 
 void dealloc_obj(struct object *obj);
 
-extern struct object *NIL;
+extern struct pair *NIL;
 extern struct object *UNSPECIFIC;
 extern struct object *TRUE;
 extern struct object *FALSE;
 
 void init_singleton_objects(void);
 
-struct object* make_integer(int x);
-struct object* make_string(char *str);
-struct object* make_symbol(char *str);
-struct object* make_pair(struct object *car,
-                         struct object *cdr);
-struct object* make_procedure(struct object *params,
-                              struct object *code,
-                              struct object *env);
-struct object* make_primitive_procedure(void *func,
-                                        unsigned int arity,
-                                        const char* name,
-                                        unsigned int takes_ctx);
-struct object* make_code(struct instruction *code);
-struct object* make_environment(struct object *parent);
+struct integer* make_integer(int x);
+struct string* make_string(char *str);
+struct symbol* make_symbol(char *str);
+struct pair* make_pair(struct object *car,
+                       struct object *cdr);
+struct compound_proc*
+make_compound_procedure(struct object *params,
+                        struct code *code,
+                        struct environment *env);
+struct prim_proc* make_primitive_procedure(void *func,
+                                           unsigned int arity,
+                                           const char* name,
+                                           unsigned int takes_ctx);
+struct code* make_code(struct instruction *ins);
+struct environment* make_environment(struct environment *parent);
 
 struct object* print_obj(struct object *obj);
 

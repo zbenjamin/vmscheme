@@ -6,24 +6,24 @@
 void
 init_symbol_table(void)
 {
-  array_create(&symbol_table, sizeof(struct object *));
+  array_create(&symbol_table, sizeof(struct symbol *));
 }
 
-struct object *
+struct symbol *
 get_symbol(char *name)
 {
-  struct object *sym;
+  struct symbol *sym;
   int i;
   int size = array_size(&symbol_table);
   for (i = 0; i < size; ++i) {
-    sym = *obj_array_ref(&symbol_table, i);
-    if (strcmp(name, sym->sval) == 0) {
+    sym = *(struct symbol**) array_ref(&symbol_table, i);
+    if (strcmp(name, sym->value) == 0) {
       return sym;
     }
   }
 
   sym = make_symbol(strdup(name));
-  INC_REF(sym);
+  INC_REF(&sym->obj);
   array_add(&symbol_table, &sym);
   return sym;
 }

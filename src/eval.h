@@ -8,16 +8,19 @@
 struct vm_context {
   struct instruction *pc;
   struct stack *stk;
-  struct object *env;
+  struct environment *env;
 };
 
-struct object *eval(struct object *form,
-                    struct object *env);
-struct object *eval_sequence(struct object *forms,
-                             struct object *env);
-struct object *apply(struct object *func, struct object *args,
+struct object *eval(struct pair *form,
+                    struct environment *env);
+struct object *eval_sequence(struct pair *forms,
+                             struct environment *env);
+struct object *apply(struct procedure *func, struct pair *args,
                      struct vm_context *ctx);
-struct object *apply_and_run(struct object *func, struct object *args,
+struct object *apply_wrap(struct object *func, struct object *args,
+                          struct vm_context *ctx);
+struct object *apply_and_run(struct procedure *func,
+                             struct pair *args,
                              struct vm_context *ctx);
 
 #endif // VMSCHEME_EVAL_H

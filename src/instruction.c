@@ -26,8 +26,8 @@ disassemble_wrap(struct object *proc)
     exit(1);
   }
 
-  disassemble(proc->proc_val->code->cval);
-  return NIL;
+  disassemble(container_of(proc, struct instruction, obj));
+  return UNSPECIFIC;
 }
 
 void

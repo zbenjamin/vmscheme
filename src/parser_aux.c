@@ -10,14 +10,14 @@
 extern FILE *yyin;
 void set_scanner_interactive(int flag);
 void reset_scanner(void);
-int yyparse(void*, struct object** parse_result,
+int yyparse(void*, struct pair** parse_result,
             struct debuginfo *dbiproto);
 extern int yydebug;
 
-struct object*
+struct pair*
 parse_interactive(void)
 {
-  struct object *result;
+  struct pair *result;
   struct debuginfo dbiproto;
   dbiproto.src = SRC_STDIN;
   dbiproto.src_file = NULL;
@@ -29,10 +29,10 @@ parse_interactive(void)
   return result;
 }
 
-struct object*
+struct pair*
 parse_file(const char *filename)
 {
-  struct object *result;
+  struct pair *result;
   struct debuginfo dbiproto;
   dbiproto.src = SRC_FILE;
   dbiproto.src_file = strdup(filename);

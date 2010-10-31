@@ -1,5 +1,6 @@
 #include <object.h>
 #include <environment.h>
+#include <instruction.h>
 #include <primitive_procedures.h>
 
 #include <array.h>
@@ -8,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-struct object *NIL;
+struct pair *NIL;
 struct object *UNSPECIFIC;
 struct object *TRUE;
 struct object *FALSE;
@@ -17,57 +18,14 @@ void
 dealloc_obj(struct object *obj)
 {
   assert(obj->refcount == 0);
-  struct object *ocar;
-  struct object *ocdr;
-
-  /* printf("deallocating %s obj %p: ", obj->type->name, obj); */
-
-  switch (obj->type->code) {
-  case PAIR_TYPE:
-    ocar = car(obj);
-    ocdr = cdr(obj);
-    /* printf("%p %p\n", ocar, ocdr); */
-    DEC_REF(ocar);
-    DEC_REF(ocdr);
-    free(obj->pval);
-    break;
-  case INTEGER_TYPE:
-    /* printf("%d\n", obj->ival); */
-    break;
-  case STRING_TYPE:
-    /* printf("%s\n", obj->sval); */
-    free(obj->sval);
-    break;
-  case SYMBOL_TYPE:
-    /* printf("%s\n", obj->sval); */
-    free(obj->sval);
-    break;
-  case PROCEDURE_TYPE:
-    /* printf("%p %p %p\n", obj->proc_val->params, obj->proc_val->code, */
-    /*        obj->proc_val->env); */
-    DEC_REF(obj->proc_val->params);
-    DEC_REF(obj->proc_val->code);
-    if (obj->proc_val->env) {
-      DEC_REF(obj->proc_val->env);
-    }
-    free(obj->proc_val);
-    break;
-  case PRIMITIVE_PROC_TYPE:
-    /* printf("%s\n", obj->pproc_val->name); */
-    free(obj->pproc_val);
-    break;
-  case CODE_TYPE:
-    /* printf("\n"); */
-    dealloc_bytecode(obj->cval);
-    break;
-  case ENVIRONMENT_TYPE:
-    /* printf("%p\n", obj->eval->parent); */
-    dealloc_env(obj);
-    break;
-  default:
-    printf("don't know how to deallocate a %s\n", obj->type->name);
-    exit(1);
-  }
+  struct pair *p;
+  struct integer *i;
+  struct string *st;
+  struct symbol *sy;
+  struct procedure *proc;
+  struct prim_proc *pp;
+  struct compound_proc *cp;
+  struct environment *e;
 
   if (obj->dinfo) {
     if (obj->dinfo->src_file) {
@@ -75,15 +33,64 @@ dealloc_obj(struct object *obj)
     }
     free(obj->dinfo);
   }
-  free(obj);
+
+  switch (obj->type->code) {
+  case PAIR_TYPE:
+    p = container_of(obj, struct pair, obj);
+    DEC_REF(p->car);
+    DEC_REF(p->cdr);
+    free(p);
+    break;
+  case INTEGER_TYPE:
+    i = container_of(obj, struct integer, obj);
+    free(i);
+    break;
+  case STRING_TYPE:
+    st = container_of(obj, struct string, obj);
+    free(st);
+    break;
+  case SYMBOL_TYPE:
+    sy = container_of(obj, struct symbol, obj);
+    free(sy);
+    break;
+  case PROCEDURE_TYPE:
+    proc = container_of(obj, struct procedure, obj);
+    switch (proc->type) {
+    case COMPOUND:
+      cp = container_of(proc, struct compound_proc, proc);
+      DEC_REF(cp->params);
+      DEC_REF(&cp->code->obj);
+      if (cp->env) {
+        DEC_REF(&cp->env->obj);
+      }
+      free(cp);
+      break;
+    case PRIMITIVE:
+      pp = container_of(proc, struct prim_proc, proc);
+      free(pp);
+      break;
+    }
+    break;
+  case CODE_TYPE:
+    /* printf("\n"); */
+    /* dealloc_bytecode(container_of(obj, struct instruction, obj)); */
+    break;
+  case ENVIRONMENT_TYPE:
+    e = container_of(obj, struct environment, obj);
+    dealloc_env(e);
+    break;
+  default:
+    printf("don't know how to deallocate a %s\n", obj->type->name);
+    exit(1);
+  }
 }
 
 void
 init_singleton_objects(void)
 {
-  NIL = malloc(sizeof(struct object));
-  NIL->type = get_type(NIL_TYPE);
-  NIL->refcount = -1;
+  NIL = make_pair(NULL, NULL);
+  NIL->obj.type = get_type(NIL_TYPE);
+  NIL->obj.refcount = -1;
   UNSPECIFIC = malloc(sizeof(struct object));
   UNSPECIFIC->type = get_type(UNSPECIFIC_TYPE);
   UNSPECIFIC->refcount = -1;
@@ -97,121 +104,119 @@ init_singleton_objects(void)
   env_define(global_env, "unspecific", UNSPECIFIC);
 }
 
-struct object*
+struct integer*
 make_integer(int x)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(INTEGER_TYPE);
-  ret->ival = x;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct integer *ret = malloc(sizeof(struct integer));
+  ret->obj.type = get_type(INTEGER_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->value = x;
   return ret;
 }
 
-struct object*
+struct string*
 make_string(char *str)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(STRING_TYPE);
-  ret->sval = str;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct string *ret = malloc(sizeof(struct string));
+  ret->obj.type = get_type(STRING_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->value = str;
   return ret;
 }
 
-struct object*
+struct symbol*
 make_symbol(char *str)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(SYMBOL_TYPE);
-  ret->sval = str;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct symbol *ret = malloc(sizeof(struct symbol));
+  ret->obj.type = get_type(SYMBOL_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->value = str;
   return ret;
 }
 
-struct object*
+struct pair*
 make_pair(struct object *car, struct object *cdr)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(PAIR_TYPE);
-  ret->pval = malloc(sizeof(struct object*) * 2);
-  ret->pval[0] = car;
-  ret->pval[1] = cdr;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
-  INC_REF(car);
-  INC_REF(cdr);
-  return ret;
-}
-
-struct object*
-make_procedure(struct object *params,
-               struct object *code,
-               struct object *env)
-{
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(PROCEDURE_TYPE);
-  struct proc_rec *rec = malloc(sizeof(struct proc_rec));
-  rec->params = params;
-  rec->code = code;
-  rec->env = env;
-  ret->proc_val = rec;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
-  INC_REF(params);
-  INC_REF(code);
-  if (env) {
-    INC_REF(env);
+  struct pair *ret = malloc(sizeof(struct pair));
+  ret->obj.type = get_type(PAIR_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->car = car;
+  ret->cdr = cdr;
+  if (car) {
+    INC_REF(car);
+  }
+  if (cdr) {
+    INC_REF(cdr);
   }
   return ret;
 }
 
-struct object*
+struct compound_proc*
+make_compound_procedure(struct object *params,
+                        struct code *code,
+                        struct environment *env)
+{
+  struct compound_proc *ret = malloc(sizeof(struct compound_proc));
+  ret->proc.type = COMPOUND;
+  ret->proc.obj.type = get_type(PROCEDURE_TYPE);
+  ret->proc.obj.refcount = 0;
+  ret->proc.obj.dinfo = NULL;
+  ret->params = params;
+  ret->code = code;
+  ret->env = env;
+  INC_REF(params);
+  INC_REF(&code->obj);
+  if (env) {
+    INC_REF(&env->obj);
+  }
+  return ret;
+}
+
+struct prim_proc*
 make_primitive_procedure(void *func,
                          unsigned int arity,
                          const char *name,
                          unsigned int takes_ctx)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(PRIMITIVE_PROC_TYPE);
-  struct primitive_proc_rec *rec =
-    malloc(sizeof(struct primitive_proc_rec));
-  rec->arity = arity;
-  rec->func = func;
-  rec->name = name;
-  rec->takes_ctx = takes_ctx;
-  ret->pproc_val = rec;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct prim_proc *ret = malloc(sizeof(struct prim_proc));
+  ret->proc.type = PRIMITIVE;
+  ret->proc.obj.type = get_type(PROCEDURE_TYPE);
+  ret->proc.obj.refcount = 0;
+  ret->proc.obj.dinfo = NULL;
+  ret->arity = arity;
+  ret->func = func;
+  ret->name = name;
+  ret->takes_ctx = takes_ctx;
   return ret;
 }
 
-struct object*
-make_code(struct instruction *code)
+struct code*
+make_code(struct instruction *ins)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(CODE_TYPE);
-  ret->cval = code;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct code *ret = malloc(sizeof(struct code));
+  ret->obj.type = get_type(CODE_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->ins = ins;
   return ret;
 }
 
-struct object*
-make_environment(struct object *parent)
+struct environment*
+make_environment(struct environment *parent)
 {
-  struct object *ret = malloc(sizeof(struct object));
-  ret->type = get_type(ENVIRONMENT_TYPE);
-  struct environment *env = malloc(sizeof(struct environment));
-  str_array_create(&env->names);
-  obj_array_create(&env->values);
-  env->parent = parent;
-  ret->eval = env;
-  ret->refcount = 0;
-  ret->dinfo = NULL;
+  struct environment *ret = malloc(sizeof(struct environment));
+  ret->obj.type = get_type(ENVIRONMENT_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  str_array_create(&ret->names);
+  obj_array_create(&ret->values);
+  ret->parent = parent;
   if (parent) {
-    INC_REF(parent);
+    INC_REF(&parent->obj);
   }
   return ret;
 }
@@ -219,7 +224,8 @@ make_environment(struct object *parent)
 struct object*
 print_obj(struct object *obj)
 {
-  struct object *next;
+  struct pair *next;
+  struct procedure *proc;
 
   switch (obj->type->code) {
   case NIL_TYPE:
@@ -239,38 +245,43 @@ print_obj(struct object *obj)
     }
     break;
   case INTEGER_TYPE:
-    printf("%d", obj->ival);
+    printf("%d", container_of(obj, struct integer, obj)->value);
     break;
   case SYMBOL_TYPE:
-    printf("%s", obj->sval);
+    printf("%s", container_of(obj, struct symbol, obj)->value);
     break;
   case STRING_TYPE:
-    printf("\"%s\"", obj->sval);
+    printf("\"%s\"", container_of(obj, struct string, obj)->value);
     break;
   case PAIR_TYPE:
-    next = obj;
+    next = container_of(obj, struct pair, obj);
     printf("(");
     while (1) {
-      print_obj(car(next));
-      if (cdr(next) == NIL) {
+      print_obj(next->car);
+      if (next->cdr == &NIL->obj) {
         break;
-      } else if (cdr(next)->type->code != PAIR_TYPE) {
+      } else if (next->cdr->type->code != PAIR_TYPE) {
         printf(" . ");
-        print_obj(cdr(next));
+        print_obj(next->cdr);
         break;
       } else {
         printf(" ");
-        next = cdr(next);
+        next = container_of(next->cdr, struct pair, obj);
       }
     }
     printf(")");
     break;
-  case PRIMITIVE_PROC_TYPE:
-    printf("#<primitive-procedure: %s>",
-           obj->pproc_val->name);
-    break;
   case PROCEDURE_TYPE:
-    printf("#<procedure>");
+    proc = container_of(obj, struct procedure, obj);
+    switch (proc->type) {
+    case PRIMITIVE:
+      printf("#<primitive-procedure: %s>",
+             container_of(proc, struct prim_proc, proc)->name);
+      break;
+    case COMPOUND:
+      printf("#<procedure>");
+      break;
+    }
     break;
   case ENVIRONMENT_TYPE:
     printf("#<environment>");
@@ -278,5 +289,5 @@ print_obj(struct object *obj)
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);
   }
-  return NIL;
+  return UNSPECIFIC;
 }

@@ -5,6 +5,7 @@
 #include <object.h>
 
 struct instruction {
+  struct object obj;
   enum opcode op;
   struct object *arg;
 };

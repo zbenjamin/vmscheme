@@ -7,11 +7,11 @@
 struct object *
 load(const char *filename, struct vm_context *ctx)
 {
-  struct object *forms = parse_file(filename);
+  struct pair *forms = parse_file(filename);
   struct object *value = eval_sequence(forms, ctx->env);
   // ensures we don't double-free the return value
   INC_REF(value);
-  dealloc_obj(forms);
+  dealloc_obj(&forms->obj);
   DEC_REF(value);
 
   return value;
@@ -25,5 +25,5 @@ load_wrap(struct object *filename, struct vm_context *ctx)
     exit(1);
   }
 
-  return load(filename->sval, ctx);
+  return load(container_of(filename, struct string, obj)->value, ctx);
 }

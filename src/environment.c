@@ -7,61 +7,62 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int env_find_idx(struct object *env, const char *name);
+static int env_find_idx(struct environment *env, const char *name);
 
-struct object *global_env;
+struct environment *global_env;
 
 void
 init_global_env(void)
 {
   global_env = make_environment(NULL);
-  global_env->refcount = -1;
+  global_env->obj.refcount = -1;
 }
 
 void
-dealloc_env(struct object *env)
+dealloc_env(struct environment *env)
 {
   int i;
-  int size = array_size(&env->eval->values);
+  int size = array_size(&env->values);
   for (i = 0; i < size; ++i) {
-    free(*str_array_ref(&env->eval->names, i));
-    DEC_REF(*obj_array_ref(&env->eval->values, i));
+    free(*str_array_ref(&env->names, i));
+    DEC_REF(*obj_array_ref(&env->values, i));
   }
-  array_dealloc(&env->eval->names);
-  array_dealloc(&env->eval->values);
-  DEC_REF(env->eval->parent);
-  free(env->eval);
+  array_dealloc(&env->names);
+  array_dealloc(&env->values);
+  DEC_REF(&env->parent->obj);
+  free(env);
 }
 
 void
-env_define(struct object *env, const char *name, struct object *val)
+env_define(struct environment *env, const char *name,
+           struct object *val)
 {
   INC_REF(val);
   int idx = env_find_idx(env, name);
   if (idx != -1) {
-    DEC_REF(*obj_array_ref(&env->eval->values, idx));
-    array_set(&env->eval->values, idx, &val);
+    DEC_REF(*obj_array_ref(&env->values, idx));
+    array_set(&env->values, idx, &val);
     return;
   }
 
   char *dupname = strdup(name);
-  array_add(&env->eval->names, &dupname);
-  array_add(&env->eval->values, &val);
+  array_add(&env->names, &dupname);
+  array_add(&env->values, &val);
 }
 
 void
-env_set(struct object *env, const char *name, struct object *val)
+env_set(struct environment *env, const char *name, struct object *val)
 {
   int idx;
   do {
     idx = env_find_idx(env, name);
     if (idx != -1) {
-      DEC_REF(*obj_array_ref(&env->eval->values, idx));
-      array_set(&env->eval->values, idx, &val);
+      DEC_REF(*obj_array_ref(&env->values, idx));
+      array_set(&env->values, idx, &val);
       INC_REF(val);
       return;
     }
-    env = env->eval->parent;
+    env = env->parent;
   } while (env);
 
   printf("Unbound name: %s\n", name);
@@ -69,25 +70,25 @@ env_set(struct object *env, const char *name, struct object *val)
 }
 
 struct object*
-env_lookup(struct object *env, const char *name)
+env_lookup(struct environment *env, const char *name)
 {
   while (env != NULL) {
     int idx = env_find_idx(env, name);
     if (idx != -1) {
-      return *obj_array_ref(&env->eval->values, idx);
+      return *obj_array_ref(&env->values, idx);
     }
-    env = env->eval->parent;
+    env = env->parent;
   }
 
   return NULL;
 }    
 
 int
-env_find_idx(struct object *env, const char *name)
+env_find_idx(struct environment *env, const char *name)
 {
   int i;
-  for (i = 0; i < array_size(&env->eval->names); ++i) {
-    if (strcmp(*str_array_ref(&env->eval->names, i), name) == 0) {
+  for (i = 0; i < array_size(&env->names); ++i) {
+    if (strcmp(*str_array_ref(&env->names, i), name) == 0) {
       return i;
     }
   }
@@ -96,17 +97,26 @@ env_find_idx(struct object *env, const char *name)
 }
 
 void
-env_bind_names(struct object *env, const struct object *names,
-               struct object *values)
+env_bind_names(struct environment *env, const struct object *names,
+               struct pair *values)
 {
-  while (names != NIL) {
+  while (names != &NIL->obj) {
+    assert(names->type->code == SYMBOL_TYPE || values != NIL);
     if (names->type->code == SYMBOL_TYPE) {
-      env_define(env, names->sval, values);
+      env_define(env, container_of(names, struct symbol, obj)->value,
+                 &values->obj);
       return;
     }
-    env_define(env, car(names)->sval, car(values));
-    names = cdr(names);
-    values = cdr(values);
+    assert(names->type->code == PAIR_TYPE);
+    struct pair *pnames = container_of(names, struct pair, obj);
+    assert(pnames->car->type->code == SYMBOL_TYPE);
+    env_define(env,
+               container_of(pnames->car, struct symbol, obj)->value,
+               values->car);
+    names = pnames->cdr;
+    assert(values->cdr->type->code == PAIR_TYPE
+           || values->cdr->type->code == NIL_TYPE);
+    values = container_of(values->cdr, struct pair, obj);
   }
 }
 
