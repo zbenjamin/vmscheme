@@ -66,7 +66,7 @@ add_instruction(struct array *prog, enum opcode op,
   array_add(prog, &ins);
 }
 
-struct instruction*
+struct code*
 compile(struct pair *exprs)
 {
   struct array prog;
@@ -79,7 +79,7 @@ compile(struct pair *exprs)
   struct instruction *stream;
   stream = (struct instruction*) array2raw(&prog);
   array_dealloc(&prog);
-  return stream;
+  return make_code(stream);
 }
 
 // compiles each element, but only keeps the last value
@@ -270,7 +270,7 @@ compile_lambda(struct pair *lst, struct array *prog)
   body = container_of(rest->cdr, struct pair, obj);
   struct compound_proc *template;
   template = make_compound_procedure(args,
-                                     make_code(compile(body)),
+                                     compile(body),
                                      NULL);
   add_instruction(prog, LAMBDA, &template->proc.obj);
   INC_REF(&template->proc.obj);
@@ -292,7 +292,7 @@ compile_if(struct pair *lst, struct array *prog, int tailcall)
   struct compound_proc *conseq;
   struct pair *conseq_code = make_pair(p->car, &NIL->obj);
   conseq = make_compound_procedure(&NIL->obj,
-                                   make_code(compile(conseq_code)),
+                                   compile(conseq_code),
                                    NULL);
   INC_REF(&conseq->proc.obj);
   dealloc_obj(&conseq_code->obj);
@@ -302,7 +302,7 @@ compile_if(struct pair *lst, struct array *prog, int tailcall)
   struct compound_proc *alt;
   struct pair *alt_code = make_pair(p->car, &NIL->obj);
   alt = make_compound_procedure(&NIL->obj,
-                                make_code(compile(alt_code)),
+                                compile(alt_code),
                                 NULL);
   INC_REF(&alt->proc.obj);
   dealloc_obj(&alt_code->obj);

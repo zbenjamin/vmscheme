@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define INS_AT(cp) (&(cp)->base->stream[(cp)->offset])
+
 static void eval_instructions(struct vm_context *ctx);
 static int eval_instruction(struct vm_context *ctx);
 static void eval_call(struct vm_context *ctx);
@@ -46,13 +48,16 @@ eval(struct pair *form, struct environment *env)
 struct object *
 eval_sequence(struct pair *forms, struct environment *env)
 {
-  struct instruction *prog = compile(forms);
+  struct code *prog = compile(forms);
+  INC_REF(&prog->obj);
+  struct codeptr *pc = make_codeptr(prog, 0);
+  INC_REF(&pc->obj);
   struct stack *stk = make_stack(1024);
   // push magic "end of instructions" return address
   stack_push(stk, NULL);
   stack_push(stk, &env->obj);
   INC_REF(&env->obj);
-  struct vm_context ctx = { prog, stk, env };
+  struct vm_context ctx = { pc, stk, env };
 
   eval_instructions(&ctx);
   struct object *value = stack_pop(stk);
@@ -63,7 +68,7 @@ eval_sequence(struct pair *forms, struct environment *env)
     --(value->refcount);
   }
 
-  dealloc_bytecode(prog);
+  DEC_REF(&prog->obj);
   assert(stack_empty(stk));
   dealloc_stack(stk);
   return value;
@@ -82,37 +87,37 @@ eval_instruction(struct vm_context *ctx)
   struct object *value;
   struct compound_proc *template;
 
-  switch (ctx->pc->op) {
+  switch (INS_AT(ctx->pc)->op) {
   case NONE:
     printf("Error: tried to execute a NONE op\n");
     exit(1);
     break;
   case PUSH:
     /* printf("PUSH instruction\n"); */
-    stack_push(ctx->stk, ctx->pc->arg);
-    INC_REF(ctx->pc->arg);
-    ++ctx->pc;
+    stack_push(ctx->stk, INS_AT(ctx->pc)->arg);
+    INC_REF(INS_AT(ctx->pc)->arg);
+    ++ctx->pc->offset;
     break;
   case POP:
     /* printf("POP instruction\n"); */
     value = stack_pop(ctx->stk);
     DEC_REF(value);
-    ++ctx->pc;
+    ++ctx->pc->offset;
     break;
   case LOOKUP:
     /* printf("LOOKUP instruction\n"); */
-    assert(ctx->pc->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(ctx->pc->arg, struct symbol, obj);
+    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
     value = env_lookup(ctx->env, sym->value);
     if (! value) {
       char buf[1024];
-      debug_loc_str(ctx->pc->arg, buf, 1024);
+      debug_loc_str(INS_AT(ctx->pc)->arg, buf, 1024);
       printf("%s: unbound name: %s\n", buf, sym->value);
       exit(1);
     }
     stack_push(ctx->stk, value);
     INC_REF(value);
-    ++ctx->pc;
+    ++ctx->pc->offset;
     break;
   case CALL:
   case TAILCALL:
@@ -129,36 +134,36 @@ eval_instruction(struct vm_context *ctx)
     stack_push(ctx->stk, value);
     DEC_REF(&ctx->env->obj);
     ctx->env = container_of(orig_env, struct environment, obj);
+    DEC_REF(&ctx->pc->obj);
     if (retaddr == NULL) {
-      ctx->pc = 0;
+      ctx->pc = NULL;
       return 1;
     }
-    assert(retaddr->type->code == CODE_TYPE);
-    ctx->pc = container_of(retaddr, struct code, obj)->ins;
-    free(retaddr);
+    assert(retaddr->type->code == CODEPTR_TYPE);
+    ctx->pc = container_of(retaddr, struct codeptr, obj);
     break;
   case DEFINE:
     /* printf("DEFINE instruction\n"); */
     value = stack_pop(ctx->stk);
-    assert(ctx->pc->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(ctx->pc->arg, struct symbol, obj);
+    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
     env_define(ctx->env, sym->value, value);
     DEC_REF(value);
-    ++ctx->pc;
+    ++ctx->pc->offset;
     break;
   case SET:
     value = stack_pop(ctx->stk);
-    assert(ctx->pc->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(ctx->pc->arg, struct symbol, obj);
+    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
     env_set(ctx->env, sym->value, value);
     DEC_REF(value);
-    ++ctx->pc;
+    ++ctx->pc->offset;
     break;
   case LAMBDA:
     /* printf("LAMBDA instruction\n"); */
-    value = ctx->pc->arg;
-    assert(ctx->pc->arg->type->code == PROCEDURE_TYPE);
-    template = container_of(container_of(ctx->pc->arg,
+    value = INS_AT(ctx->pc)->arg;
+    assert(INS_AT(ctx->pc)->arg->type->code == PROCEDURE_TYPE);
+    template = container_of(container_of(INS_AT(ctx->pc)->arg,
                                          struct procedure, obj),
                             struct compound_proc, proc);
     struct compound_proc *proc;
@@ -167,7 +172,7 @@ eval_instruction(struct vm_context *ctx)
                                    ctx->env);
     stack_push(ctx->stk, &proc->proc.obj);
     INC_REF(&proc->proc.obj);
-    ++ctx->pc;
+    ++ctx->pc->offset;
     break;
   case IF:
   case TAILIF:
@@ -175,7 +180,7 @@ eval_instruction(struct vm_context *ctx)
     eval_if(ctx);
     break;
   default:
-    printf("Error: unknown opcode: %d\n", ctx->pc->op);
+    printf("Error: unknown opcode: %d\n", INS_AT(ctx->pc)->op);
     exit(1);
   }
 
@@ -209,7 +214,7 @@ eval_call(struct vm_context *ctx)
   // we get a result back for primitive functions, but compound
   // functions muck with the vm context instead
   if (result != NULL) {
-    ++ctx->pc;
+    ++ctx->pc->offset;
     stack_push(ctx->stk, result);
     // need to increment the refcount of the result before
     // deallocating the arguments in case the function returns some
@@ -321,20 +326,22 @@ apply(struct procedure *func, struct pair *args,
     // return addr garbage collected.  Also account for the case that
     // we were called from apply_and_run (and thus the pc might be
     // zero).
-    struct code *retaddr;
+    struct codeptr *retaddr;
     if (! ctx->pc) {
       retaddr = NULL;
       stack_push(ctx->stk, &retaddr->obj);
       stack_push(ctx->stk, &ctx->env->obj);
       INC_REF(&ctx->env->obj);
-    } else if (ctx->pc->op == CALL || ctx->pc->op == IF) {
-      retaddr = make_code(ctx->pc + 1);
-      retaddr->obj.refcount = -1;
+    } else if (INS_AT(ctx->pc)->op == CALL
+               || INS_AT(ctx->pc)->op == IF) {
+      retaddr = make_codeptr(ctx->pc->base, ctx->pc->offset + 1);
+      INC_REF(&retaddr->obj);
       stack_push(ctx->stk, &retaddr->obj);
       stack_push(ctx->stk, &ctx->env->obj);
       INC_REF(&ctx->env->obj);
     } else {
-      assert(ctx->pc->op == TAILCALL || ctx->pc->op == TAILIF);
+      assert(INS_AT(ctx->pc)->op == TAILCALL
+             || INS_AT(ctx->pc)->op == TAILIF);
       // a tail call of some kind
       DEC_REF(&ctx->env->obj);
     }
@@ -342,7 +349,11 @@ apply(struct procedure *func, struct pair *args,
     struct environment *new_env;
     new_env = make_environment(cp->env);
     env_bind_names(new_env, cp->params, args);
-    ctx->pc = cp->code->ins;
+    if (ctx->pc) {
+      DEC_REF(&ctx->pc->obj);
+    }
+    ctx->pc = make_codeptr(cp->code, 0);
+    INC_REF(&ctx->pc->obj);
     ctx->env = new_env;
     INC_REF(&new_env->obj);
     return NULL;

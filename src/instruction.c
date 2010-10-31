@@ -21,19 +21,24 @@ dealloc_bytecode(struct instruction *stream)
 struct object*
 disassemble_wrap(struct object *proc)
 {
+  struct compound_proc *cp;
   if (proc->type->code != PROCEDURE_TYPE) {
-    printf("Wrong type for disassemble: %s\n", proc->type->name);
-    exit(1);
+    struct procedure *p = container_of(proc, struct procedure, obj);
+    if (p->type != COMPOUND) {
+      printf("Wrong type for disassemble: %s\n", proc->type->name);
+      exit(1);
+    }
+    cp = container_of(p, struct compound_proc, proc);
   }
 
-  disassemble(container_of(proc, struct instruction, obj));
+  disassemble(cp->code);
   return UNSPECIFIC;
 }
 
 void
-disassemble(struct instruction *stream)
+disassemble(struct code *stream)
 {
-  struct instruction *ins = stream;
+  struct instruction *ins = stream->stream;
   while (1) {
     printf("  %p  %02x ", ins, ins->op);
     switch (ins->op) {

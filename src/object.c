@@ -25,6 +25,8 @@ dealloc_obj(struct object *obj)
   struct procedure *proc;
   struct prim_proc *pp;
   struct compound_proc *cp;
+  struct code *c;
+  struct codeptr *cptr;
   struct environment *e;
 
   if (obj->dinfo) {
@@ -72,8 +74,14 @@ dealloc_obj(struct object *obj)
     }
     break;
   case CODE_TYPE:
-    /* printf("\n"); */
-    /* dealloc_bytecode(container_of(obj, struct instruction, obj)); */
+    c = container_of(obj, struct code, obj);
+    dealloc_bytecode(c->stream);
+    free(c);
+    break;
+  case CODEPTR_TYPE:
+    cptr = container_of(obj, struct codeptr, obj);
+    DEC_REF(&cptr->base->obj);
+    free(cptr);
     break;
   case ENVIRONMENT_TYPE:
     e = container_of(obj, struct environment, obj);
@@ -195,13 +203,28 @@ make_primitive_procedure(void *func,
 }
 
 struct code*
-make_code(struct instruction *ins)
+make_code(struct instruction *stream)
 {
-  struct code *ret = malloc(sizeof(struct code));
+  struct code *ret;
+  ret = (struct code*) malloc(sizeof(struct code));
   ret->obj.type = get_type(CODE_TYPE);
   ret->obj.refcount = 0;
   ret->obj.dinfo = NULL;
-  ret->ins = ins;
+  ret->stream = stream;
+  return ret;
+}
+
+struct codeptr*
+make_codeptr(struct code *base, size_t offset)
+{
+  struct codeptr *ret;
+  ret = (struct codeptr*) malloc(sizeof(struct codeptr));
+  ret->obj.type = get_type(CODEPTR_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = NULL;
+  ret->base = base;
+  ret->offset = offset;
+  INC_REF(&base->obj);
   return ret;
 }
 

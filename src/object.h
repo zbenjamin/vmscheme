@@ -64,10 +64,7 @@ struct prim_proc {
   unsigned int takes_ctx;
 };
 
-struct code {
-  struct object obj;
-  struct instruction *ins;
-};
+struct instruction;
 
 #define INC_REF(x)                                  \
   do {                                              \
@@ -119,7 +116,8 @@ struct prim_proc* make_primitive_procedure(void *func,
                                            unsigned int arity,
                                            const char* name,
                                            unsigned int takes_ctx);
-struct code* make_code(struct instruction *ins);
+struct code* make_code(struct instruction *stream);
+struct codeptr* make_codeptr(struct code *base, size_t offset);
 struct environment* make_environment(struct environment *parent);
 
 struct object* print_obj(struct object *obj);

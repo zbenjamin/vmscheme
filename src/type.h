@@ -22,6 +22,7 @@ enum builtin_types {
   PAIR_TYPE,
   PROCEDURE_TYPE,
   CODE_TYPE,
+  CODEPTR_TYPE,
   ENVIRONMENT_TYPE
 };
 

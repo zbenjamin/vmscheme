@@ -6,7 +6,7 @@
 #include <environment.h>
 
 struct vm_context {
-  struct instruction *pc;
+  struct codeptr *pc;
   struct stack *stk;
   struct environment *env;
 };
