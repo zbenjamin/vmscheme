@@ -88,9 +88,10 @@ RESERVED [\[\]|]
 {RESERVED}  {
   printf("reserved character encountered: %s\n", yytext);
 }
-.  { printf("unrecognized character encountered: %s\n", yytext);
-}
+.  { printf("unrecognized character encountered: %s\n", yytext); }
 
+<INITIAL><<EOF>> { if (interactive) return INTERACTIVE_EOF;
+                   else yyterminate(); }
 %%
 
 void

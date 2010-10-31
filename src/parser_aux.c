@@ -6,6 +6,7 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern FILE *yyin;
 void set_scanner_interactive(int flag);
@@ -26,6 +27,9 @@ parse_interactive(void)
   set_scanner_interactive(1);
   reset_scanner();
   yyparse(stdin, &result, &dbiproto);
+  if (! result) {
+    exit(1);
+  }
   return result;
 }
 

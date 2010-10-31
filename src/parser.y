@@ -30,6 +30,7 @@
 %token <num> UNQUOTE
 %token <num> UNQUOTE_SPLICING
 %token <num> DOT
+%token <num> INTERACTIVE_EOF
 
 %type <pair> prog
 %type <obj> expr
@@ -80,7 +81,8 @@ loc2dbi(struct debuginfo *proto, YYLTYPE *loc)
 
 %%
 
-prog: /* empty */ { *parse_result = NULL; }
+prog: /* empty */ { *parse_result = NIL; }
+    | INTERACTIVE_EOF { *parse_result = NULL; YYACCEPT; }
     | exprseq { *parse_result = reverse_list($$);
                  dealloc_obj(&$$->obj);
                  set_debug_info(&(*parse_result)->obj,

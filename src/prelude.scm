@@ -87,16 +87,16 @@
                     (cons (func (car lst)) result)))))
     (reverse (helper lst '()))))
 
-(%define initial-repl
-  (lambda ()
-    (%define eval-each
-      (lambda (lst)
-        (%if (= (length lst) 1)
-            (eval (car lst) (the-global-environment))
-            ((lambda ()
-              (eval (car lst) (the-global-environment))
-              (eval-each (cdr lst)))))))
-    (display "> ")
-    (display (eval-each (read)))
-    (display "\n")
-    (initial-repl)))
+;; (%define initial-repl
+;;   (lambda ()
+;;     (%define eval-each
+;;       (lambda (lst)
+;;         (%if (= (length lst) 1)
+;;             (eval (car lst) (the-global-environment))
+;;             ((lambda ()
+;;               (eval (car lst) (the-global-environment))
+;;               (eval-each (cdr lst)))))))
+;;     (display "> ")
+;;     (display (eval-each (read)))
+;;     (display "\n")
+;;     (initial-repl)))

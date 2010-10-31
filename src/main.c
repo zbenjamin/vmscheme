@@ -32,6 +32,9 @@ main(int argc, char* argv[])
   value = load("stdmacro.scm", &global_ctx);
   YIELD_OBJ(value);
 
+  value = load("repl.scm", &global_ctx);
+  YIELD_OBJ(value);
+
   struct vm_context repl_ctx;
   repl_ctx.stk = make_stack(1024);
   repl_ctx.env = make_environment(global_env);
