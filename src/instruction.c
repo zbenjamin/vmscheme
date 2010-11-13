@@ -21,15 +21,17 @@ dealloc_bytecode(struct instruction *stream)
 struct object*
 disassemble_wrap(struct object *proc)
 {
-  struct compound_proc *cp;
   if (proc->type->code != PROCEDURE_TYPE) {
-    struct procedure *p = container_of(proc, struct procedure, obj);
-    if (p->type != COMPOUND) {
-      printf("Wrong type for disassemble: %s\n", proc->type->name);
-      exit(1);
-    }
-    cp = container_of(p, struct compound_proc, proc);
+    printf("Wrong type for disassemble: %s\n", proc->type->name);
+    exit(1);
   }
+  struct procedure *p = container_of(proc, struct procedure, obj);
+  if (p->type != COMPOUND) {
+    printf("Can't disassemble primitive procedures\n");
+    exit(1);
+  }
+  struct compound_proc *cp;
+  cp = container_of(p, struct compound_proc, proc);
 
   disassemble(cp->code);
   return UNSPECIFIC;
