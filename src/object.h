@@ -65,6 +65,7 @@ struct prim_proc {
 };
 
 struct instruction;
+struct stack;
 
 #define INC_REF(x)                                  \
   do {                                              \
@@ -119,6 +120,9 @@ struct prim_proc* make_primitive_procedure(void *func,
 struct code* make_code(struct instruction *stream);
 struct codeptr* make_codeptr(struct code *base, size_t offset);
 struct environment* make_environment(struct environment *parent);
+struct vm_context *make_vm_context(struct codeptr *pc,
+                                   struct stack *stk,
+                                   struct environment *env);
 
 struct object* print_obj(struct object *obj);
 

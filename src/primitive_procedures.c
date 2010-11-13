@@ -1,5 +1,6 @@
 #include <primitive_procedures.h>
 
+#include <continuation.h>
 #include <environment.h>
 #include <eval.h>
 #include <load.h>
@@ -49,6 +50,8 @@ init_primitive_procs(void)
   DEF_PRIM("disassemble", disassemble_wrap, 1, 0);
   DEF_PRIM("load", load_wrap, 1, 1);
   DEF_PRIM("string=?", stringeq_p, 2, 0);
+  DEF_PRIM("%call/cc", call_cc, 1, 1);
+  DEF_PRIM("invoke-continuation", invoke_continuation, 2, 1);
 }
 
 struct object*

@@ -26,7 +26,7 @@ static void compile_lambda(struct pair *lst, struct array *prog);
 static void compile_if(struct pair *lst, struct array *prog,
                        int tailcall);
 
-static struct vm_context compiler_ctx;
+static struct vm_context *compiler_ctx;
 static int compiler_initialized;
 static struct procedure *transform_quasiquote;
 static struct procedure *macro_find_and_transform;
@@ -35,21 +35,22 @@ void
 init_compiler(void)
 {
   compiler_initialized = 0;
-  compiler_ctx.stk = make_stack(1024);
-  compiler_ctx.env = make_environment(global_env);
-  compiler_ctx.pc = NULL;
+  compiler_ctx = make_vm_context(NULL, make_stack(1024),
+                                 make_environment(global_env));
+  INC_REF(&compiler_ctx->obj);
+  struct vm_context **pctx = &compiler_ctx;
   struct object *value;
-  value = load("quasiquote.scm", &compiler_ctx);
+  value = load("quasiquote.scm", pctx);
   YIELD_OBJ(value);
-  value = load("macros.scm", &compiler_ctx);
+  value = load("macros.scm", pctx);
   YIELD_OBJ(value);
 
   struct object *res;
-  res = env_lookup(compiler_ctx.env, "transform-quasiquote");
+  res = env_lookup(compiler_ctx->env, "transform-quasiquote");
   assert(res->type->code == PROCEDURE_TYPE);
   transform_quasiquote = container_of(res, struct procedure, obj);
 
-  res = env_lookup(compiler_ctx.env, "macro:find-and-transform");
+  res = env_lookup(compiler_ctx->env, "macro:find-and-transform");
   assert(res->type->code == PROCEDURE_TYPE);
   macro_find_and_transform = container_of(res, struct procedure, obj);
 

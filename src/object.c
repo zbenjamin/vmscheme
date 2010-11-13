@@ -2,6 +2,7 @@
 #include <environment.h>
 #include <instruction.h>
 #include <primitive_procedures.h>
+#include <continuation.h>
 
 #include <array.h>
 #include <assert.h>
@@ -28,6 +29,7 @@ dealloc_obj(struct object *obj)
   struct code *c;
   struct codeptr *cptr;
   struct environment *e;
+  struct vm_context *cont;
 
   if (obj->dinfo) {
     if (obj->dinfo->src_file) {
@@ -86,6 +88,10 @@ dealloc_obj(struct object *obj)
   case ENVIRONMENT_TYPE:
     e = container_of(obj, struct environment, obj);
     dealloc_env(e);
+    break;
+  case CONTINUATION_TYPE:
+    cont = container_of(obj, struct vm_context, obj);
+    dealloc_continuation(cont);
     break;
   default:
     printf("don't know how to deallocate a %s\n", obj->type->name);
@@ -244,6 +250,26 @@ make_environment(struct environment *parent)
   return ret;
 }
 
+struct vm_context*
+make_vm_context(struct codeptr *pc,
+                struct stack *stk,
+                struct environment *env)
+{
+  struct vm_context *ret;
+  ret = (struct vm_context*) malloc(sizeof(struct vm_context));
+  ret->obj.type = get_type(CONTINUATION_TYPE);
+  ret->obj.refcount = 0;
+  ret->obj.dinfo = 0;
+  ret->pc = pc;
+  ret->stk = stk;
+  ret->env = env;
+  if (pc) {
+    INC_REF(&pc->obj);
+  }
+  INC_REF(&env->obj);
+  return ret;
+}
+
 struct object*
 print_obj(struct object *obj)
 {
@@ -255,7 +281,7 @@ print_obj(struct object *obj)
     printf("()");
     break;
   case UNSPECIFIC_TYPE:
-    printf("<unspecified>");
+    printf("#<unspecified>");
     break;
   case BOOLEAN_TYPE:
     if (obj == TRUE) {
@@ -308,6 +334,9 @@ print_obj(struct object *obj)
     break;
   case ENVIRONMENT_TYPE:
     printf("#<environment>");
+    break;
+  case CONTINUATION_TYPE:
+    printf("#<continuation>");
     break;
   default:
     printf("\nError: can't print obj type '%s'\n", obj->type->name);

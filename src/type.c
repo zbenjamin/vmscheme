@@ -22,6 +22,7 @@ init_builtin_types(void)
   make_type("code");
   make_type("code-pointer");
   make_type("environment");
+  make_type("continuation");
 }
 
 struct type*

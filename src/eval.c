@@ -13,21 +13,20 @@
 
 #define INS_AT(cp) (&(cp)->base->stream[(cp)->offset])
 
-static void eval_instructions(struct vm_context *ctx);
-static int eval_instruction(struct vm_context *ctx);
-static void eval_call(struct vm_context *ctx);
-static void eval_if(struct vm_context *ctx);
+static void eval_instructions(struct vm_context **ctx);
+static int eval_instruction(struct vm_context **ctx);
+static void eval_call(struct vm_context **ctx);
+static void eval_if(struct vm_context **ctx);
 static struct procedure* check_proc(struct object *func);
 static struct object *primitive_apply0(struct prim_proc *func,
                                        struct pair *args,
-                                       struct vm_context *ctx);
+                                       struct vm_context **ctx);
 static struct object *primitive_apply1(struct prim_proc *func,
                                        struct pair *args,
-                                       struct vm_context *ctx);
+                                       struct vm_context **ctx);
 static struct object *primitive_apply2(struct prim_proc *func,
                                        struct pair *args,
-                                       struct vm_context *ctx);
-
+                                       struct vm_context **ctx);
 
 // see note for eval_sequence, below
 struct object *
@@ -57,10 +56,12 @@ eval_sequence(struct pair *forms, struct environment *env)
   stack_push(stk, NULL);
   stack_push(stk, &env->obj);
   INC_REF(&env->obj);
-  struct vm_context ctx = { pc, stk, env };
+  struct vm_context *ctx = make_vm_context(pc, stk, env);
+  INC_REF(&ctx->obj);
+  struct vm_context **pctx = &ctx;
 
-  eval_instructions(&ctx);
-  struct object *value = stack_pop(stk);
+  eval_instructions(pctx);
+  struct object *value = stack_pop((*pctx)->stk);
 
   // decrement the refcount if it's positive, but don't deallocate
   // the object
@@ -69,55 +70,55 @@ eval_sequence(struct pair *forms, struct environment *env)
   }
 
   DEC_REF(&prog->obj);
-  assert(stack_empty(stk));
-  dealloc_stack(stk);
+  assert(stack_empty((*pctx)->stk));
+  DEC_REF(&ctx->obj);
   return value;
 }
 
 void
-eval_instructions(struct vm_context *ctx)
+eval_instructions(struct vm_context **ctx)
 {
   while (! eval_instruction(ctx)) { }
 }
 
 int
-eval_instruction(struct vm_context *ctx)
+eval_instruction(struct vm_context **ctx)
 {
   struct symbol *sym;
   struct object *value;
   struct compound_proc *template;
 
-  switch (INS_AT(ctx->pc)->op) {
+  switch (INS_AT((*ctx)->pc)->op) {
   case NONE:
     printf("Error: tried to execute a NONE op\n");
     exit(1);
     break;
   case PUSH:
     /* printf("PUSH instruction\n"); */
-    stack_push(ctx->stk, INS_AT(ctx->pc)->arg);
-    INC_REF(INS_AT(ctx->pc)->arg);
-    ++ctx->pc->offset;
+    stack_push((*ctx)->stk, INS_AT((*ctx)->pc)->arg);
+    INC_REF(INS_AT((*ctx)->pc)->arg);
+    ++(*ctx)->pc->offset;
     break;
   case POP:
     /* printf("POP instruction\n"); */
-    value = stack_pop(ctx->stk);
+    value = stack_pop((*ctx)->stk);
     DEC_REF(value);
-    ++ctx->pc->offset;
+    ++(*ctx)->pc->offset;
     break;
   case LOOKUP:
     /* printf("LOOKUP instruction\n"); */
-    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
-    value = env_lookup(ctx->env, sym->value);
+    assert(INS_AT((*ctx)->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT((*ctx)->pc)->arg, struct symbol, obj);
+    value = env_lookup((*ctx)->env, sym->value);
     if (! value) {
       char buf[1024];
-      debug_loc_str(INS_AT(ctx->pc)->arg, buf, 1024);
+      debug_loc_str(INS_AT((*ctx)->pc)->arg, buf, 1024);
       printf("%s: unbound name: %s\n", buf, sym->value);
       exit(1);
     }
-    stack_push(ctx->stk, value);
+    stack_push((*ctx)->stk, value);
     INC_REF(value);
-    ++ctx->pc->offset;
+    ++(*ctx)->pc->offset;
     break;
   case CALL:
   case TAILCALL:
@@ -125,54 +126,55 @@ eval_instruction(struct vm_context *ctx)
     eval_call(ctx);
     break;
   case RET:
-    value = stack_pop(ctx->stk);
-    struct object *orig_env = stack_pop(ctx->stk);
+    value = stack_pop((*ctx)->stk);
+    struct object *orig_env = stack_pop((*ctx)->stk);
     assert(orig_env->type->code == ENVIRONMENT_TYPE);
     DEC_REF(orig_env);
-    struct object *retaddr = stack_pop(ctx->stk);
+    struct object *retaddr = stack_pop((*ctx)->stk);
     /* printf("RET instruction @ %p to %p\n", *pc, retaddr->cval); */
-    stack_push(ctx->stk, value);
-    DEC_REF(&ctx->env->obj);
-    ctx->env = container_of(orig_env, struct environment, obj);
-    DEC_REF(&ctx->pc->obj);
+    stack_push((*ctx)->stk, value);
+    DEC_REF(&(*ctx)->env->obj);
+    (*ctx)->env = container_of(orig_env, struct environment, obj);
     if (retaddr == NULL) {
-      ctx->pc = NULL;
+      (*ctx)->pc = NULL;
       return 1;
     }
     assert(retaddr->type->code == CODEPTR_TYPE);
-    ctx->pc = container_of(retaddr, struct codeptr, obj);
+    *(*ctx)->pc = *container_of(retaddr, struct codeptr, obj);
+    /* XXX: */
+    /* DEC_REF(retaddr); */
     break;
   case DEFINE:
     /* printf("DEFINE instruction\n"); */
-    value = stack_pop(ctx->stk);
-    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
-    env_define(ctx->env, sym->value, value);
+    value = stack_pop((*ctx)->stk);
+    assert(INS_AT((*ctx)->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT((*ctx)->pc)->arg, struct symbol, obj);
+    env_define((*ctx)->env, sym->value, value);
     DEC_REF(value);
-    ++ctx->pc->offset;
+    ++(*ctx)->pc->offset;
     break;
   case SET:
-    value = stack_pop(ctx->stk);
-    assert(INS_AT(ctx->pc)->arg->type->code == SYMBOL_TYPE);
-    sym = container_of(INS_AT(ctx->pc)->arg, struct symbol, obj);
-    env_set(ctx->env, sym->value, value);
+    value = stack_pop((*ctx)->stk);
+    assert(INS_AT((*ctx)->pc)->arg->type->code == SYMBOL_TYPE);
+    sym = container_of(INS_AT((*ctx)->pc)->arg, struct symbol, obj);
+    env_set((*ctx)->env, sym->value, value);
     DEC_REF(value);
-    ++ctx->pc->offset;
+    ++(*ctx)->pc->offset;
     break;
   case LAMBDA:
     /* printf("LAMBDA instruction\n"); */
-    value = INS_AT(ctx->pc)->arg;
-    assert(INS_AT(ctx->pc)->arg->type->code == PROCEDURE_TYPE);
-    template = container_of(container_of(INS_AT(ctx->pc)->arg,
+    value = INS_AT((*ctx)->pc)->arg;
+    assert(INS_AT((*ctx)->pc)->arg->type->code == PROCEDURE_TYPE);
+    template = container_of(container_of(INS_AT((*ctx)->pc)->arg,
                                          struct procedure, obj),
                             struct compound_proc, proc);
     struct compound_proc *proc;
     proc = make_compound_procedure(template->params,
                                    template->code,
-                                   ctx->env);
-    stack_push(ctx->stk, &proc->proc.obj);
+                                   (*ctx)->env);
+    stack_push((*ctx)->stk, &proc->proc.obj);
     INC_REF(&proc->proc.obj);
-    ++ctx->pc->offset;
+    ++(*ctx)->pc->offset;
     break;
   case IF:
   case TAILIF:
@@ -180,7 +182,7 @@ eval_instruction(struct vm_context *ctx)
     eval_if(ctx);
     break;
   default:
-    printf("Error: unknown opcode: %d\n", INS_AT(ctx->pc)->op);
+    printf("Error: unknown opcode: %d\n", INS_AT((*ctx)->pc)->op);
     exit(1);
   }
 
@@ -188,9 +190,9 @@ eval_instruction(struct vm_context *ctx)
 }
 
 void
-eval_call(struct vm_context *ctx)
+eval_call(struct vm_context **ctx)
 {
-  struct object *num_args = stack_pop(ctx->stk);
+  struct object *num_args = stack_pop((*ctx)->stk);
   struct pair *args = NIL;
   if (num_args->type->code != INTEGER_TYPE) {
     printf("Internal error: number of arguments to call "
@@ -201,21 +203,21 @@ eval_call(struct vm_context *ctx)
   int num = container_of(num_args, struct integer, obj)->value;
   DEC_REF(num_args);
   while (num) {
-    struct object *arg = stack_pop(ctx->stk);
+    struct object *arg = stack_pop((*ctx)->stk);
     args = make_pair(arg, &args->obj);
     DEC_REF(arg);
     --num;
   }
 
-  struct procedure *func = check_proc(stack_pop(ctx->stk));
+  struct procedure *func = check_proc(stack_pop((*ctx)->stk));
   struct object *result;
   result = apply(func, args, ctx);
 
-  // we get a result back for primitive functions, but compound
-  // functions muck with the vm context instead
+  // we get a result back for (most) primitive functions, but
+  // compound functions muck with the vm context instead
   if (result != NULL) {
-    ++ctx->pc->offset;
-    stack_push(ctx->stk, result);
+    ++(*ctx)->pc->offset;
+    stack_push((*ctx)->stk, result);
     // need to increment the refcount of the result before
     // deallocating the arguments in case the function returns some
     // bit of the arguments (like car or cdr)
@@ -227,11 +229,11 @@ eval_call(struct vm_context *ctx)
 }
 
 void
-eval_if(struct vm_context *ctx)
+eval_if(struct vm_context **ctx)
 {
-  struct object *testval = stack_pop(ctx->stk);
-  struct object *alt = stack_pop(ctx->stk);
-  struct object *conseq = stack_pop(ctx->stk);
+  struct object *testval = stack_pop((*ctx)->stk);
+  struct object *alt = stack_pop((*ctx)->stk);
+  struct object *conseq = stack_pop((*ctx)->stk);
 
   struct object *action;
   if (testval == FALSE) {
@@ -243,8 +245,8 @@ eval_if(struct vm_context *ctx)
   }
 
   struct integer *zero = make_integer(0);
-  stack_push(ctx->stk, action);
-  stack_push(ctx->stk, &zero->obj);
+  stack_push((*ctx)->stk, action);
+  stack_push((*ctx)->stk, &zero->obj);
   INC_REF(&zero->obj);
   eval_call(ctx);
 }
@@ -280,7 +282,7 @@ check_args(struct object *args)
 
 struct object *
 apply(struct procedure *func, struct pair *args,
-      struct vm_context *ctx)
+      struct vm_context **ctx)
 {
   unsigned int num_args = list_length(args);
 
@@ -326,35 +328,34 @@ apply(struct procedure *func, struct pair *args,
     // return addr garbage collected.  Also account for the case that
     // we were called from apply_and_run (and thus the pc might be
     // zero).
-    struct codeptr *retaddr;
-    if (! ctx->pc) {
-      retaddr = NULL;
-      stack_push(ctx->stk, &retaddr->obj);
-      stack_push(ctx->stk, &ctx->env->obj);
-      INC_REF(&ctx->env->obj);
-    } else if (INS_AT(ctx->pc)->op == CALL
-               || INS_AT(ctx->pc)->op == IF) {
-      retaddr = make_codeptr(ctx->pc->base, ctx->pc->offset + 1);
+    if (! (*ctx)->pc) {
+      stack_push((*ctx)->stk, NULL);
+      stack_push((*ctx)->stk, &(*ctx)->env->obj);
+      INC_REF(&(*ctx)->env->obj);
+    } else if (INS_AT((*ctx)->pc)->op == CALL
+               || INS_AT((*ctx)->pc)->op == IF) {
+      struct codeptr *retaddr;
+      retaddr = make_codeptr((*ctx)->pc->base, (*ctx)->pc->offset + 1);
       INC_REF(&retaddr->obj);
-      stack_push(ctx->stk, &retaddr->obj);
-      stack_push(ctx->stk, &ctx->env->obj);
-      INC_REF(&ctx->env->obj);
+      stack_push((*ctx)->stk, &retaddr->obj);
+      stack_push((*ctx)->stk, &(*ctx)->env->obj);
+      INC_REF(&(*ctx)->env->obj);
     } else {
-      assert(INS_AT(ctx->pc)->op == TAILCALL
-             || INS_AT(ctx->pc)->op == TAILIF);
+      assert(INS_AT((*ctx)->pc)->op == TAILCALL
+             || INS_AT((*ctx)->pc)->op == TAILIF);
       // a tail call of some kind
-      DEC_REF(&ctx->env->obj);
+      DEC_REF(&(*ctx)->env->obj);
     }
 
     struct environment *new_env;
     new_env = make_environment(cp->env);
     env_bind_names(new_env, cp->params, args);
-    if (ctx->pc) {
-      DEC_REF(&ctx->pc->obj);
+    if ((*ctx)->pc) {
+      DEC_REF(&(*ctx)->pc->obj);
     }
-    ctx->pc = make_codeptr(cp->code, 0);
-    INC_REF(&ctx->pc->obj);
-    ctx->env = new_env;
+    (*ctx)->pc = make_codeptr(cp->code, 0);
+    INC_REF(&(*ctx)->pc->obj);
+    (*ctx)->env = new_env;
     INC_REF(&new_env->obj);
     return NULL;
   }
@@ -382,11 +383,11 @@ apply(struct procedure *func, struct pair *args,
 
 struct object *
 primitive_apply0(struct prim_proc *func, struct pair *args,
-                 struct vm_context *ctx)
+                 struct vm_context **ctx)
 {
   if (func->takes_ctx) {
-    struct object *(*function)(struct vm_context*);
-    function = (struct object *(*)(struct vm_context*)) func->func;
+    struct object *(*function)(struct vm_context**);
+    function = (struct object *(*)(struct vm_context**)) func->func;
     return function(ctx);
   } else {
     struct object *(*function)();
@@ -397,14 +398,14 @@ primitive_apply0(struct prim_proc *func, struct pair *args,
 
 struct object *
 primitive_apply1(struct prim_proc *func, struct pair *args,
-                 struct vm_context *ctx)
+                 struct vm_context **ctx)
 {
   struct object *arg1 = args->car;
 
   if (func->takes_ctx) {
-    struct object *(*function)(struct object*, struct vm_context*);
+    struct object *(*function)(struct object*, struct vm_context**);
     function = (struct object *(*)(struct object*,
-                                   struct vm_context*)) func->func;
+                                   struct vm_context**)) func->func;
     return function(arg1, ctx);
   } else {
     struct object *(*function)(struct object*);
@@ -415,7 +416,7 @@ primitive_apply1(struct prim_proc *func, struct pair *args,
 
 struct object *
 primitive_apply2(struct prim_proc *func, struct pair *args,
-                 struct vm_context *ctx)
+                 struct vm_context **ctx)
 {
   struct object *arg1 = args->car;
   assert(args->cdr->type->code == PAIR_TYPE);
@@ -425,10 +426,10 @@ primitive_apply2(struct prim_proc *func, struct pair *args,
   if (func->takes_ctx) {
     struct object *(*function)(struct object*,
                                struct object*,
-                               struct vm_context*);
+                               struct vm_context**);
     function = (struct object *(*)(struct object*,
                                    struct object*,
-                                   struct vm_context*)) func->func;
+                                   struct vm_context**)) func->func;
     return function(arg1, arg2, ctx);
   } else {
     struct object *(*function)(struct object*,
@@ -441,14 +442,14 @@ primitive_apply2(struct prim_proc *func, struct pair *args,
 
 struct object *
 apply_wrap(struct object *func, struct object *args,
-           struct vm_context *ctx)
+           struct vm_context **ctx)
 {
   return apply(check_proc(func), check_args(args), ctx);
 }
 
 struct object *
 apply_and_run(struct procedure *func, struct pair *args,
-              struct vm_context *ctx)
+              struct vm_context **ctx)
 {
   struct object *result;
   result = apply(func, args, ctx);
@@ -456,6 +457,6 @@ apply_and_run(struct procedure *func, struct pair *args,
     return result;
   }
   eval_instructions(ctx);
-  result = stack_pop(ctx->stk);
+  result = stack_pop((*ctx)->stk);
   return result;
 }
